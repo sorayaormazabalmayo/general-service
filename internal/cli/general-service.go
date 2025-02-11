@@ -43,6 +43,7 @@ func newServeCommand(logger log.Logger) *ff.Command {
 	fs.StringVar(&cfg.HTTPAddr, 0, "http-addr", "localhost:8000", "HTTP address")
 	fs.StringVar(&cfg.InternatHTTPAddr, 0, "internal-http-addr", "localhost:9000", "Internal HTTP address")
 	fs.BoolVarDefault(&cfg.Debug, 0, "debug", false, "Enable debug")
+	fs.BoolVarDefault(&cfg.AutoUpdate, 0, "auto-update", false, "Enable updater")
 
 	cmd := &ff.Command{
 		Name:      "serve",

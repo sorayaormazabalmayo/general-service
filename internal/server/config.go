@@ -5,6 +5,7 @@ type Config struct {
 	HTTPAddr         string
 	InternatHTTPAddr string
 	Debug            bool
+	AutoUpdate       bool
 }
 
 // Valid checks if required values are present.
