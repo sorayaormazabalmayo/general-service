@@ -1,0 +1,87 @@
+{
+ "signatures": [
+  {
+   "keyid": "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a",
+   "sig": "30450220797abe6cee71a5951625526aa0a5ab566bde2726b61bafd682a16e6ab32763df022100ed7543e79ab5eac0fbffdf26ca7d4d2268b17277ccc987525ee18bedc408adc3"
+  }
+ ],
+ "signed": {
+  "_type": "targets",
+  "delegations": {
+   "keys": {
+    "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a": {
+     "keytype": "ecdsa",
+     "keyval": {
+      "public": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsOWPsISez0E70CLYo05us03bGS/k\n2BUV0zlbJXUO4t3IEHqtsiON3yApsxY5ydKeY1Za9Bq9uFLi2zlR5GxgCQ==\n-----END PUBLIC KEY-----\n"
+     },
+     "scheme": "ecdsa-sha2-nistp256",
+     "x-tuf-on-ci-keyowner": "@sorayaormazabalmayo"
+    }
+   },
+   "roles": [
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "device-cli",
+     "paths": [
+      "device-cli/*",
+      "device-cli/*/*",
+      "device-cli/*/*/*",
+      "device-cli/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    },
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "nebula-standalone",
+     "paths": [
+      "nebula-standalone/*",
+      "nebula-standalone/*/*",
+      "nebula-standalone/*/*/*",
+      "nebula-standalone/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    },
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "tunnel-integration",
+     "paths": [
+      "tunnel-integration/*",
+      "tunnel-integration/*/*",
+      "tunnel-integration/*/*/*",
+      "tunnel-integration/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    },
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "space",
+     "paths": [
+      "space/*",
+      "space/*/*",
+      "space/*/*/*",
+      "space/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    }
+   ]
+  },
+  "expires": "2026-01-27T11:44:37Z",
+  "spec_version": "1.0.31",
+  "targets": {},
+  "version": 32,
+  "x-tuf-on-ci-expiry-period": 365,
+  "x-tuf-on-ci-signing-period": 60
+ }
+}

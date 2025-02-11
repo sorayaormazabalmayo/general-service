@@ -1,0 +1,24 @@
+{
+ "signatures": [
+  {
+   "keyid": "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a",
+   "sig": "3044022067fbe1f78d05d2a025912be708412bcab807143bf33797b0fb0572e0b7a2e9e002201f0fcff2a6e84dbaef4fccd2bbfa9e02c9ca71df3f0e23760f9b273f048a73d0"
+  }
+ ],
+ "signed": {
+  "_type": "targets",
+  "expires": "2026-02-03T08:13:31Z",
+  "spec_version": "1.0.31",
+  "targets": {
+   "tunnel-integration/tunnel-integration-index.json": {
+    "hashes": {
+     "sha256": "b625c6ec89c1b0cc9c6d243b2c8df62a7423db830f685d9f4e2059508d64d360"
+    },
+    "length": 491
+   }
+  },
+  "version": 33,
+  "x-tuf-on-ci-expiry-period": 365,
+  "x-tuf-on-ci-signing-period": 60
+ }
+}

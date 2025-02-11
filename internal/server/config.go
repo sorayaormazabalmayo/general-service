@@ -6,6 +6,7 @@ type Config struct {
 	InternatHTTPAddr string
 	Debug            bool
 	AutoUpdate       bool
+	MetadataURL      string
 }
 
 // Valid checks if required values are present.
