@@ -105,7 +105,7 @@ jobs:
           service_name=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
           zip_name="${service_name}.zip"
           echo "zip_name=$zip_name" >> $GITHUB_ENV
-          zip -r "$zip_name" bin/
+          zip -r "$zip_name" bin/*
       
       # Step 7: Compute the SHA256
       - name: Compute the SHA256 of the .zip
