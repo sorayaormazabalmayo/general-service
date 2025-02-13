@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"flag"
+	"fmt"
 	"time"
 
 	"github.com/peterbourgon/ff/v4"
@@ -61,6 +62,8 @@ func newServeCommand(logger log.Logger) *ff.Command {
 			}
 
 			if cfg.AutoUpdate {
+
+				fmt.Printf("----- Setting the Updater of TUF inside a General-Service v2-----\n")
 
 				updtr := updater.NewUpdater(cfg)
 
