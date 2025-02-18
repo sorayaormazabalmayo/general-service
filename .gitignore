@@ -2,7 +2,7 @@
 .vscode/
 .history/
 .reports/
-bin/
+## /bin
 cmd/*/debug
 cmd/*/debug.test
 cmd/*/main
