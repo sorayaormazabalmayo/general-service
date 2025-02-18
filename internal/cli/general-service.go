@@ -62,7 +62,7 @@ func newServeCommand(logger log.Logger) *ff.Command {
 			}
 
 			if cfg.AutoUpdate {
-
+        
 				fmt.Printf("----- Setting the Updater of TUF inside a General-Service v5-----\n")
 
 				updtr := updater.NewUpdater(cfg)
