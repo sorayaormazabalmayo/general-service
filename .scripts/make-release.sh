@@ -7,7 +7,7 @@ set -e
 current_date=$(date +"%Y.%m.%d")
 
 # Ensure that we are up to date with remote 
-git pull 
+git pull origin main
 
 # Get the current commit hash (shortened)
 commit_hash=$(git rev-parse --short HEAD)
