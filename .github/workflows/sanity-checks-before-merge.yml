@@ -23,4 +23,4 @@ jobs:
     steps: 
       - name: Simulating that some testings and checks are done
         run: |
-          echo "Simulating that some testings and checks are done"
+          echo "Simulating that some testings and checks are done ..."
