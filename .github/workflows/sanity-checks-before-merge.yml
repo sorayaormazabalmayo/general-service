@@ -7,20 +7,35 @@ on:
       - main
   push: 
     branches:
-      -main
+      - main  # ✅ Fixed missing space after `-`
 
 jobs:
-
-  # Job 1: Simulating some sanity checks are done
-  sanity-checks-to-the-built-files-before-merging: 
-    name: Sanity Checks Before Merging 
+  # Job 1: Run when triggered by a Pull Request
+  sanity-checks-for-pr: 
+    name: Sanity Checks for Pull Request
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'  # ✅ Runs only for PR events
     permissions:
       contents: write
       id-token: write
     env:
-      TZ: Europe/Madrid  # Set the timezone to your local timezone
+      TZ: Europe/Madrid  # Set the timezone
     steps: 
-      - name: Simulating that some testings and checks are done
+      - name: Simulating sanity checks for PR
         run: |
-          echo "Simulating that some testings and checks are done ..."
+          echo "🔍 Running sanity checks before merging PR..."
+
+  # Job 2: Run when triggered by a Push
+  sanity-checks-for-push: 
+    name: Sanity Checks for Push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'  # ✅ Runs only for push events
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      TZ: Europe/Madrid  # Set the timezone
+    steps: 
+      - name: Simulating sanity checks for Push
+        run: |
+          echo "🚀 Running sanity checks after pushing changes..."
