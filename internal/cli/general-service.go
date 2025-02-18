@@ -3,13 +3,10 @@ package cli
 import (
 	"context"
 	"flag"
-	"fmt"
-	"time"
 
 	"github.com/peterbourgon/ff/v4"
 	"github.com/saltosystems-internal/x/log"
 	"github.com/sorayaormazabalmayo/general-service/internal/server"
-	"github.com/sorayaormazabalmayo/general-service/internal/updater"
 )
 
 // NewGneralServiceCommand creates and returns the root cli command
@@ -59,26 +56,6 @@ func newServeCommand(logger log.Logger) *ff.Command {
 				if err := logger.SetAllowedLevel(log.AllowDebug()); err != nil {
 					return err
 				}
-			}
-
-			if cfg.AutoUpdate {
-
-				fmt.Printf("----- Setting the Updater of TUF inside a General-Service v7-----\n")
-
-				updtr := updater.NewUpdater(cfg)
-
-				metadataDir, currentVersions := updater.SettingServices(updtr.Logger)
-
-				time.Sleep(time.Second * updater.TimeForUpdaters)
-
-				// // The updater needs to be looking for new updates every x time
-				go func() {
-
-					for {
-						updater.SettingUpdater(updtr.Logger, metadataDir, currentVersions)
-					}
-
-				}()
 			}
 
 			logger.Info("General server started",
