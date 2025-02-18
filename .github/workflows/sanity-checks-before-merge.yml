@@ -12,7 +12,7 @@ on:
 jobs:
   # Job 1: Run when triggered by a Pull Request
   sanity-checks-for-pr: 
-    name: Sanity Checks for Pull Request
+    name: Sanity Checks Before Merging PR
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'  # ✅ Runs only for PR events
     permissions:
@@ -27,7 +27,7 @@ jobs:
 
   # Job 2: Run when triggered by a Push
   sanity-checks-for-push: 
-    name: Sanity Checks for Push
+    name: Sanity Checks Before Pushing to Main
     runs-on: ubuntu-latest
     if: github.event_name == 'push'  # ✅ Runs only for push events
     permissions:
