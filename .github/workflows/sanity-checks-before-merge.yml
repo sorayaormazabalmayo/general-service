@@ -1,0 +1,64 @@
+name: 'Sanity checks before merging PR'
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  # Job 1: Build the files before sanity checks and before merging to main
+  build-files-before-sanity-checks-and-merging:
+    name: 'Build Go Files'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      TZ: Europe/Madrid  # Set the timezone to your local timezone
+
+    steps:
+      # Step 1: Clone the source repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Install Go
+      - name: Setting up Golang
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      # Step 3: List all Go files in the directory
+      - name: List All Go Files
+        run: |
+          echo "Listing all Go files in the directory:"
+          find . -type f -name "*.go"
+
+        # Step 4: Build all Go files
+      - name: Build All Go Files
+        id: build_step
+        run: |
+          echo "Building all Go files in the directory..."
+          mkdir -p build
+          find . -type f -name "*.go" | while read -r file; do
+            echo "Building $file..."
+            output_name=$(basename "$file" .go)
+            go build -o "build/$output_name" "$file"
+          done
+
+      # Step 5: Show Build Results
+      - name: List Build Output
+        run: |
+          echo "Build outputs:"
+          ls -lh build/
+
+  # Job 2: Simulating sanity checks to the build files before merging
+  sanity-checks-to-the-built-files-before-merging: 
+    name: Sanity Checks Before Merging 
+    needs: build-files-before-sanity-checks-and-merging
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Simulating that some testings and checks are done
+        run: |
+          echo "Simulating that some testings and checks are done"
