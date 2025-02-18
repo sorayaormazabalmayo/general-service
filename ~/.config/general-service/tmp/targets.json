@@ -2,7 +2,7 @@
  "signatures": [
   {
    "keyid": "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a",
-   "sig": "30450220797abe6cee71a5951625526aa0a5ab566bde2726b61bafd682a16e6ab32763df022100ed7543e79ab5eac0fbffdf26ca7d4d2268b17277ccc987525ee18bedc408adc3"
+   "sig": "304602210088993eee48193086a1edfd59623a839adb9cc30d2b366ad44c0b6bbeeceaae75022100e2f20c2b9e3bca5c3ba0677c1e12721572e54c9ac65827abad38538552ad45fb"
   }
  ],
  "signed": {
@@ -74,13 +74,27 @@
      ],
      "terminating": true,
      "threshold": 1
+    },
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "general-service",
+     "paths": [
+      "general-service/*",
+      "general-service/*/*",
+      "general-service/*/*/*",
+      "general-service/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
     }
    ]
   },
-  "expires": "2026-01-27T11:44:37Z",
+  "expires": "2026-02-13T06:58:59Z",
   "spec_version": "1.0.31",
   "targets": {},
-  "version": 32,
+  "version": 33,
   "x-tuf-on-ci-expiry-period": 365,
   "x-tuf-on-ci-signing-period": 60
  }

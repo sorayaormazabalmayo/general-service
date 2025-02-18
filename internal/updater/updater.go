@@ -32,11 +32,12 @@ const (
 
 var (
 	// Services that the client will require
-	services = []string{"tunnel-integration"}
+	services = []string{"general-service"}
 	// Defining desired layout fot the date
 	layout                = "2006.01.02.15.04.05"
 	serviceAccountKeyPath = "/home/sormazabal/artifact-downloader-key.json"
-	SALTOFilePath         = "/mnt/c/SALTO/%s"
+	SALTOFilePath         = "/home/sormazabal/.local/bin/"
+	tufMetadataPath       = "/home/sormazabal/.config/general-service"
 )
 
 type indexInfo struct {
@@ -172,18 +173,29 @@ func SettingUpdater(log metadata.Logger, metadataDir string, currentVersions []s
 // InitEnvironment prepares the local environment - temporary folders, etc.
 func InitEnvironment() (string, error) {
 	var tmpDir string
+	var err error
 	// get working directory
-	cwd, err := os.Getwd()
-	if err != nil {
+	//cwd, err := os.Getwd()
+	/*if err != nil {
 		return "", fmt.Errorf("failed to get current working directory: %w", err)
 	}
+	*/
 	if !generateRandomFolder {
-		tmpDir = filepath.Join(cwd, "tmp")
+		tmpDir = filepath.Join(tufMetadataPath, "tmp")
 		// create a temporary folder for storing the demo artifacts
-		os.Mkdir(tmpDir, 0750)
+		// os.Mkdir(tmpDir, 0750)
+		// Check if the directory already exists
+		if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
+			// Create the directory if it does not exist
+			err = os.MkdirAll(tmpDir, 0750)
+			if err != nil {
+				return "", fmt.Errorf("failed to create a temporary folder: %w", err)
+			}
+		}
+
 	} else {
 		// create a temporary folder for storing the demo artifacts
-		tmpDir, err = os.MkdirTemp(cwd, "tmp")
+		tmpDir, err = os.MkdirTemp(tufMetadataPath, "tmp")
 		if err != nil {
 			return "", fmt.Errorf("failed to create a temporary folder: %w", err)
 		}
@@ -529,13 +541,18 @@ func moveFile(srcPath, destPath string) error {
 		return fmt.Errorf("failed to delete source file: %w", err)
 	}
 
+	// // Give new permissions
+	// info, _ := os.Stat(destPath)
+	// newMode := info.Mode() | 0111
+	// os.Chmod(destPath, newMode)
+
 	return nil
 }
 
 // Function for moving the file to the permanent location
 func movingFileToPermanentLocation(service, downloadedFilePath string) {
 
-	newFilePath := fmt.Sprintf(SALTOFilePath, service)
+	newFilePath := fmt.Sprintf(SALTOFilePath+"%s", service)
 
 	// Moving from the temporary folder
 

@@ -1,0 +1,24 @@
+{
+ "signatures": [
+  {
+   "keyid": "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a",
+   "sig": "304502204012eb85f8f822e70611cfaa0a9cbcee0400e21f935f2521e10b2e7895dbbc0c022100ac98416e7e7abc36034b8fd748db6c8d95e2892d010b982119e1d28a1e5d391b"
+  }
+ ],
+ "signed": {
+  "_type": "targets",
+  "expires": "2026-02-13T14:15:45Z",
+  "spec_version": "1.0.31",
+  "targets": {
+   "general-service/general-service-index.json": {
+    "hashes": {
+     "sha256": "5e9c0931fe49bb77abdc549feccc008ea602e350fe21909b81f8bee3bf5ac877"
+    },
+    "length": 483
+   }
+  },
+  "version": 5,
+  "x-tuf-on-ci-expiry-period": 365,
+  "x-tuf-on-ci-signing-period": 60
+ }
+}

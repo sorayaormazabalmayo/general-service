@@ -1,0 +1,101 @@
+{
+ "signatures": [
+  {
+   "keyid": "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a",
+   "sig": "304602210088993eee48193086a1edfd59623a839adb9cc30d2b366ad44c0b6bbeeceaae75022100e2f20c2b9e3bca5c3ba0677c1e12721572e54c9ac65827abad38538552ad45fb"
+  }
+ ],
+ "signed": {
+  "_type": "targets",
+  "delegations": {
+   "keys": {
+    "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a": {
+     "keytype": "ecdsa",
+     "keyval": {
+      "public": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsOWPsISez0E70CLYo05us03bGS/k\n2BUV0zlbJXUO4t3IEHqtsiON3yApsxY5ydKeY1Za9Bq9uFLi2zlR5GxgCQ==\n-----END PUBLIC KEY-----\n"
+     },
+     "scheme": "ecdsa-sha2-nistp256",
+     "x-tuf-on-ci-keyowner": "@sorayaormazabalmayo"
+    }
+   },
+   "roles": [
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "device-cli",
+     "paths": [
+      "device-cli/*",
+      "device-cli/*/*",
+      "device-cli/*/*/*",
+      "device-cli/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    },
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "nebula-standalone",
+     "paths": [
+      "nebula-standalone/*",
+      "nebula-standalone/*/*",
+      "nebula-standalone/*/*/*",
+      "nebula-standalone/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    },
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "tunnel-integration",
+     "paths": [
+      "tunnel-integration/*",
+      "tunnel-integration/*/*",
+      "tunnel-integration/*/*/*",
+      "tunnel-integration/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    },
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "space",
+     "paths": [
+      "space/*",
+      "space/*/*",
+      "space/*/*/*",
+      "space/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    },
+    {
+     "keyids": [
+      "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+     ],
+     "name": "general-service",
+     "paths": [
+      "general-service/*",
+      "general-service/*/*",
+      "general-service/*/*/*",
+      "general-service/*/*/*/*"
+     ],
+     "terminating": true,
+     "threshold": 1
+    }
+   ]
+  },
+  "expires": "2026-02-13T06:58:59Z",
+  "spec_version": "1.0.31",
+  "targets": {},
+  "version": 33,
+  "x-tuf-on-ci-expiry-period": 365,
+  "x-tuf-on-ci-signing-period": 60
+ }
+}

@@ -1,0 +1,65 @@
+{
+ "signatures": [
+  {
+   "keyid": "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a",
+   "sig": "3046022100d16cff2a0321cede204b2e97b0f1060b3030a1e837623cfff7d1a11bc4cd785f02210094385236d5c42adadd292131f4422b1d353e75c3e52ce61e0a0742138f3bd50d"
+  }
+ ],
+ "signed": {
+  "_type": "root",
+  "consistent_snapshot": true,
+  "expires": "2025-12-09T09:22:58Z",
+  "keys": {
+   "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a": {
+    "keytype": "ecdsa",
+    "keyval": {
+     "public": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsOWPsISez0E70CLYo05us03bGS/k\n2BUV0zlbJXUO4t3IEHqtsiON3yApsxY5ydKeY1Za9Bq9uFLi2zlR5GxgCQ==\n-----END PUBLIC KEY-----\n"
+    },
+    "scheme": "ecdsa-sha2-nistp256",
+    "x-tuf-on-ci-keyowner": "@sorayaormazabalmayo"
+   },
+   "acfcd243f8f265eaa360f8a2a0d31b793a0b194030056a36f6aca09d9a0077a0": {
+    "keytype": "ecdsa",
+    "keyval": {
+     "public": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEsgYORFqR7FpCN5EFtoA9bGn7kvHB\nZVFMoExoVAjL1yKxbIk3mgQtkTVfXBzFm9jTsEXkuJttBXwLMWwVyy/I1A==\n-----END PUBLIC KEY-----\n"
+    },
+    "scheme": "ecdsa-sha2-nistp256",
+    "x-tuf-on-ci-online-uri": "azurekms://sorayaormazabalmayo-key2.vault.azure.net/keys/key-real2/60aea8b6282b4238a22d2bca30c66095"
+   }
+  },
+  "roles": {
+   "root": {
+    "keyids": [
+     "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+    ],
+    "threshold": 1
+   },
+   "snapshot": {
+    "keyids": [
+     "acfcd243f8f265eaa360f8a2a0d31b793a0b194030056a36f6aca09d9a0077a0"
+    ],
+    "threshold": 1,
+    "x-tuf-on-ci-expiry-period": 365,
+    "x-tuf-on-ci-signing-period": 60
+   },
+   "targets": {
+    "keyids": [
+     "47167821e560e0b9e078f6ce5654683b880232e473daaf9b60b335dbcaf5740a"
+    ],
+    "threshold": 1
+   },
+   "timestamp": {
+    "keyids": [
+     "acfcd243f8f265eaa360f8a2a0d31b793a0b194030056a36f6aca09d9a0077a0"
+    ],
+    "threshold": 1,
+    "x-tuf-on-ci-expiry-period": 2,
+    "x-tuf-on-ci-signing-period": 1
+   }
+  },
+  "spec_version": "1.0.31",
+  "version": 1,
+  "x-tuf-on-ci-expiry-period": 365,
+  "x-tuf-on-ci-signing-period": 60
+ }
+}
