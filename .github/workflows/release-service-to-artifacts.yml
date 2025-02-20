@@ -106,7 +106,7 @@ jobs:
           zip_name ="${{github.ref_name}}.zip"
           echo "zip_name=$zip_name" >> $GITHUB_ENV
           echo "Computing SHA256 checksum of the .zip"
-          digest=$(sha256sum "${{ env.zip_name }}" | awk '{ print $1 }')
+          digest=$(sha256sum zip_name | awk '{ print $1 }')
           echo "digest=$digest" >> $GITHUB_ENV
           echo "SHA256 checksum is: $digest"
         
