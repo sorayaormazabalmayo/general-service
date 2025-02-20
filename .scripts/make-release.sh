@@ -29,8 +29,7 @@ tag="v${current_date}-sha${commit_hash}"
 echo "The version tag is: $tag"
 
 # Create and push the tag
-git add . 
-git commit -m "Another release"
+
 git tag -a "$tag" -m "Release $tag"
 git push origin "$tag"
 echo "Tag $tag created and pushed successfully."
