@@ -34,6 +34,10 @@ jobs:
           echo "tag=${{github.ref_name}}">>$GITHUB_ENV
           echo "The Tag name is ${{env.tag}}"
 
+          ## Getting the repository name
+          repo_name="${{ github.repository }}"
+          echo "repo_name=$repo_name" >> $GITHUB_ENV
+
       # Step 3: Validate the Tag Format (Date and Commit SHA)
       - name: Validate the Tag Format (Date and Commit SHA)
         run: |
@@ -98,12 +102,17 @@ jobs:
           # Getting the tag name
           echo "tag=${{github.ref_name}}">>$GITHUB_ENV
           echo "Simulating that some testings and checks are done"
+
+          ## Getting the repository name
+          repo_name=$(basename "${{ github.repository }}")
+          echo "repo_name=$repo_name" >> $GITHUB_ENV
           
       
       # Step 4: Compute the SHA256
       - name: Compute the SHA256 of the .zip
         run: |
-          zip_name ="${{github.ref_name}}.zip"
+          zip_name="${{ env.repo_name }}.zip"
+          echo "ZIP file name: $zip_name"
           echo "zip_name=$zip_name" >> $GITHUB_ENV
           echo "Computing SHA256 checksum of the .zip"
           digest=$(sha256sum zip_name | awk '{ print $1 }')
