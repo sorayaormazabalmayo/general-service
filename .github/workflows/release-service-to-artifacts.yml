@@ -99,19 +99,12 @@ jobs:
           echo "tag=${{github.ref_name}}">>$GITHUB_ENV
           echo "Simulating that some testings and checks are done"
           
-      # Step 3: Compress Artifacts from bin
-      - name: Compress Artifacts from bin
-        run: |
-          service_name=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)
-          zip_name="${service_name}.zip"
-          echo "zip_name=$zip_name" >> $GITHUB_ENV
-          cd bin && zip -r "../$zip_name" * && cd ..
       
-      # Step 4: Compute the SHA256
+      # Step 3: Compute the SHA256
       - name: Compute the SHA256 of the .zip
         run: |
           echo "Computing SHA256 checksum of the .zip"
-          digest=$(sha256sum "${{ env.zip_name }}" | awk '{ print $1 }')
+          digest=$(sha256sum general-service.zip | awk '{ print $1 }')
           echo "digest=$digest" >> $GITHUB_ENV
           echo "SHA256 checksum is: $digest"
         
