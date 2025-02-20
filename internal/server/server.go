@@ -35,7 +35,7 @@ func NewServer(cfg *Config, logger log.Logger) (*Server, error) {
 	fs := http.FileServer(http.Dir("static"))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// Serve index.html at /v1/health
+	// Serve index.html
 	mux.HandleFunc("/nebula", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		http.ServeFile(w, r, "static/index.html")
