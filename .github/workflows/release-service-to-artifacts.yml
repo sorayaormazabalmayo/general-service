@@ -107,11 +107,15 @@ jobs:
           repo_name=$(basename "${{ github.repository }}")
           echo "repo_name=$repo_name" >> $GITHUB_ENV
           
-      
+      # Step 3: Getting the .zip that wants to be relased 
+      - name: Getting the -zip 
+        run: |
+         zip general-service.zip general-service general-service.yml static      
+
       # Step 4: Compute the SHA256
       - name: Compute the SHA256 of the .zip
         run: |
-          zip_name="${{ env.repo_name }}.zip"
+          zip_name="${{env.repo_name}}.zip"
           echo "ZIP file name: $zip_name"
           echo "zip_name=$zip_name" >> $GITHUB_ENV
           echo "Computing SHA256 checksum of the .zip"
