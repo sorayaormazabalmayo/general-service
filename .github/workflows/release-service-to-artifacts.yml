@@ -179,21 +179,15 @@ jobs:
 
           echo "Original version: ${{ env.tag }}"
 
-          for file in bin/*; do
-            artifact_name=$(basename "$file")
-            echo "Processing artifact: $artifact_name"
+          gcloud artifacts generic upload \
+            --repository=nebula-storage \
+            --location=europe-southwest1 \
+            --project=polished-medium-445107-i9 \
+            --package="${{ env.service_name }}" \
+            --version="${{ env.tag }}" \
+            --source="${{ env.zip_name }}"
 
-            gcloud artifacts generic upload \
-              --repository=nebula-storage \
-              --location=europe-southwest1 \
-              --project=polished-medium-445107-i9 \
-              --package="${{ env.service_name }}" \
-              --version="${{ env.tag }}" \
-              --source="$file"
-
-            echo "Uploaded $artifact_name to Google Artifact Registry"
-          done
-
+          echo "Uploaded $artifact_name to Google Artifact Registry"
           echo "Successfully uploaded all artifacts to Google Artifact Registry"
       
       # Step 11: Getting the SHA of the uploaded file to GAR
@@ -203,46 +197,41 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
 
-          # Download the artifact from Google Artifact Registry
-    
+          # Create GAR directory
           mkdir -p GAR
           echo "Downloading artifact from Google Artifact Registry..."
+
+          # Download the artifact from Google Artifact Registry
           gcloud artifacts files download \
             --project=polished-medium-445107-i9 \
             --location=europe-southwest1 \
             --repository=nebula-storage \
             --destination=./GAR/ \
-            "${{ env.service_name }}:${{ env.tag }}:${{ env.service_name }}" \
+            "${{ env.service_name }}:${{ env.tag }}:${{ env.zip_name }}" \
             --verbosity=debug
 
-          # Find the downloaded file dynamically and fix any URL encoding
-          downloaded_file=$(ls -1 GAR/ | head -n 1)  # Get the first file in GAR/
-          decoded_file=$(echo "$downloaded_file" | sed 's/%3A/:/g')  # Replace %3A with :
+          # Ensure the zip file is correctly named
+          downloaded_zip="GAR/${{ env.zip_name }}"
 
-          if [ -z "$downloaded_file" ]; then
-              echo "Error: No file found in GAR/ after download."
+          if [ ! -f "$downloaded_zip" ]; then
+              echo "Error: Expected file $downloaded_zip not found in GAR/"
               exit 1
           fi
 
-          # Rename if needed
-          if [[ "$downloaded_file" != "$decoded_file" ]]; then
-              mv "GAR/$downloaded_file" "GAR/$decoded_file"
-              downloaded_file="$decoded_file"
-          fi
+          echo "Downloaded ZIP file from GAR: $downloaded_zip"
 
-          echo "Downloaded file from GAR: $downloaded_file"
-
-          # Compute SHA256 of the downloaded file from GAR
-          echo "Computing SHA256 of downloaded GAR artifact..."
-          gar_downloaded_sha256=$(sha256sum "GAR/$downloaded_file" | awk '{ print $1 }')
+          # Compute SHA256 of the downloaded ZIP file
+          echo "Computing SHA256 of the downloaded ZIP..."
+          gar_downloaded_sha256=$(sha256sum "$downloaded_zip" | awk '{ print $1 }')
 
           if [ -z "$gar_downloaded_sha256" ]; then
-              echo "Error: Failed to compute SHA256 of the downloaded artifact"
+              echo "Error: Failed to compute SHA256 of the downloaded ZIP"
               exit 1
           fi
 
-          echo "GAR Downloaded SHA256: $gar_downloaded_sha256"
+          echo "GAR Downloaded ZIP SHA256: $gar_downloaded_sha256"
           echo "gar_sha256=$gar_downloaded_sha256" >> $GITHUB_ENV
+
 
       # Step 12: Getting the digest of the GitHub Release
       - name: Getting the digest of the GitHub Release
