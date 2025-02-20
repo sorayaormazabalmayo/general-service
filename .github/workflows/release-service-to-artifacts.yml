@@ -210,13 +210,32 @@ jobs:
             "${{ env.service_name }}:${{ env.tag }}:${{ env.zip_name }}" \
             --verbosity=debug
 
-          # Ensure the zip file is correctly named
-          downloaded_zip="GAR/${{ env.zip_name }}"
-          echo "Downloaded ZIP file from GAR: $downloaded_zip"
+          # Detect the actual downloaded filename
+          downloaded_file=$(ls -1 GAR/ | head -n 1)  # Get the first file in GAR/
+          
+          if [ -z "$downloaded_file" ]; then
+              echo "Error: No file found in GAR/ after download."
+              exit 1
+          fi
+
+          # Fix potential encoding issue (%3A instead of ":")
+          decoded_file=$(echo "$downloaded_file" | sed 's/%3A/:/g')
+
+          # Rename the file if needed
+          if [[ "$downloaded_file" != "$decoded_file" ]]; then
+              mv "GAR/$downloaded_file" "GAR/$decoded_file"
+              downloaded_file="$decoded_file"
+          fi
+
+          # Ensure file is named correctly for SHA256 computation
+          final_zip_path="GAR/${{ env.zip_name }}"
+          mv "GAR/$downloaded_file" "$final_zip_path"
+
+          echo "Downloaded ZIP file from GAR: $final_zip_path"
 
           # Compute SHA256 of the downloaded ZIP file
           echo "Computing SHA256 of the downloaded ZIP..."
-          gar_downloaded_sha256=$(sha256sum "$downloaded_zip" | awk '{ print $1 }')
+          gar_downloaded_sha256=$(sha256sum "$final_zip_path" | awk '{ print $1 }')
 
           if [ -z "$gar_downloaded_sha256" ]; then
               echo "Error: Failed to compute SHA256 of the downloaded ZIP"
@@ -225,6 +244,7 @@ jobs:
 
           echo "GAR Downloaded ZIP SHA256: $gar_downloaded_sha256"
           echo "gar_sha256=$gar_downloaded_sha256" >> $GITHUB_ENV
+
 
 
       # Step 12: Getting the digest of the GitHub Release
