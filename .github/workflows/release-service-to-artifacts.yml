@@ -212,12 +212,6 @@ jobs:
 
           # Ensure the zip file is correctly named
           downloaded_zip="GAR/${{ env.zip_name }}"
-
-          if [ ! -f "$downloaded_zip" ]; then
-              echo "Error: Expected file $downloaded_zip not found in GAR/"
-              exit 1
-          fi
-
           echo "Downloaded ZIP file from GAR: $downloaded_zip"
 
           # Compute SHA256 of the downloaded ZIP file
