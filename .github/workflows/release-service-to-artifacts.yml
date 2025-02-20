@@ -250,44 +250,32 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-
-          # Get the latest release asset URL
+      
+          # Get the latest release asset URL for general-service.zip
           ASSET_URL=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" \
             "https://api.github.com/repos/${{ github.repository }}/releases/latest" \
-            | jq -r '.assets[] | select(.name | endswith(".zip")) | .browser_download_url')
-
+            | jq -r '.assets[] | select(.name == "general-service.zip") | .browser_download_url')
+      
           if [ -z "$ASSET_URL" ]; then
-              echo "Error: No .zip file found in the latest release!"
+              echo "Error: general-service.zip not found in the latest release!"
               exit 1
           fi
-
-          echo "Downloading ZIP file from: $ASSET_URL"
-          wget -O release.zip "$ASSET_URL"
-          mkdir extracted_release
-          unzip -o release.zip -d extracted_release
-          echo "Extracted files:"
-          ls -l extracted_release/
-
-          # Find the extracted file dynamically      
-          release_file=$(find extracted_release/ -type f | head -n 1)  # Pick the first file
-
-          if [ -z "$release_file" ]; then
-              echo "Error: No file found in extracted_release/ after unzip."
+      
+          echo "Downloading general-service.zip from: $ASSET_URL"
+          wget -O general-service.zip "$ASSET_URL"
+      
+          # Compute SHA256 checksum of the ZIP file
+          echo "Computing SHA256 of general-service.zip..."
+          github_zip_sha256=$(sha256sum "general-service.zip" | awk '{ print $1 }')
+      
+          if [ -z "$github_zip_sha256" ]; then
+              echo "Error: Failed to compute SHA256 of general-service.zip"
               exit 1
           fi
-
-          echo "Extracted file: $release_file"
-          # Compute SHA256 of the extracted file
-          echo "Computing SHA256 of extracted file..."
-          github_extracted_sha256=$(sha256sum "$release_file" | awk '{ print $1 }')
-
-          if [ -z "$github_extracted_sha256" ]; then
-              echo "Error: Failed to compute SHA256 of the extracted file"
-              exit 1
-          fi
-
-          echo "GitHub Extracted File SHA256: $github_extracted_sha256"
-          echo "github_release_sha256=$github_extracted_sha256" >> $GITHUB_ENV
+      
+          echo "GitHub Release general-service.zip SHA256: $github_zip_sha256"
+          echo "github_release_sha256=$github_zip_sha256" >> $GITHUB_ENV
+    
 
       # Step 13: Verifying the SHA256 checksum of GAR vs. GitHub Release
       - name: Verifying SHA256 Checksums
