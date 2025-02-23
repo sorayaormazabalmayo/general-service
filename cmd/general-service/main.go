@@ -17,7 +17,7 @@ import (
 	"github.com/sorayaormazabalmayo/general-service/internal/cli"
 )
 
-const jsonFilePath = "/var/lib/your-app/update_status.json"
+const jsonFilePath = "/home/sormazabal/src/general-service/update_status.json"
 
 var updateStatus = struct {
 	UpdateAvailable int `json:"update_available"`
@@ -105,8 +105,8 @@ func main() {
 	go func() {
 		http.HandleFunc("/check-update", checkUpdateHandler)
 		http.HandleFunc("/run-update", runUpdateHandler)
-		fmt.Println("🚀 API running on http://localhost:8080")
-		http.ListenAndServe(":8080", nil)
+		fmt.Println("🚀 API running on http://localhost:8003")
+		http.ListenAndServe(":8003", nil)
 	}()
 
 	// Start periodic update checker
