@@ -105,8 +105,8 @@ func main() {
 	go func() {
 		http.HandleFunc("/check-update", checkUpdateHandler)
 		http.HandleFunc("/run-update", runUpdateHandler)
-		fmt.Println("🚀 API running on http://localhost:8003")
-		http.ListenAndServe(":8003", nil)
+		fmt.Println("🚀 API running on http://localhost:8005")
+		http.ListenAndServe(":8005", nil)
 	}()
 
 	// Start periodic update checker
