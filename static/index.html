@@ -87,7 +87,7 @@ function w3_close() {
 }
 
 function checkForUpdate() {
-      fetch("http://localhost:8005/check-update")  // Now pointing to port 8002
+      fetch("/check-update")  // Now pointing to port 8002
       .then(response => response.json())
       .then(data => {
           console.log("Update Check Response:", data); // Debugging output

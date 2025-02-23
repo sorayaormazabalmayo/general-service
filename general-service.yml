@@ -1,5 +1,5 @@
 # Server parameters
-http-addr: :8001
+http-addr: :8010
 internal-http-addr: :9000
 # Testing and debugging 
 debug: false
