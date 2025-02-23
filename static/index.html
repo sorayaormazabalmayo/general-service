@@ -11,10 +11,27 @@
 <style>
     /* Blue horizontal line */
     .blue-line {
-        width: 100%; /* Full width of sidebar */
-        height: 5px; /* Thickness of the line */
-        background-color: #007bff; /* Blue color */
-        margin-top: 10px; /* Spacing from the logo */
+        width: 100%;
+        height: 5px;
+        background-color: #007bff;
+        margin-top: 10px;
+    }
+
+    /* Update button styling */
+    #updateButton {
+        display: none; /* Initially hidden */
+        margin-top: 20px;
+        background-color: #28a745;
+        color: white;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    #updateButton:hover {
+        background-color: #218838;
     }
 </style> 
 </head>
@@ -30,7 +47,6 @@
             SALTO <tspan font-weight="normal">Nebula</tspan>
         </text>
     </svg>
-
     </div>
     <div class="w3-padding-64 w3-large w3-text-grey" style="font-weight:bold">
       <a href="#index.html" class="w3-bar-item w3-button">Home</a>
@@ -42,20 +58,22 @@
       <a href="#" class="w3-bar-item w3-button">Settings</a>
       <a href="static/actualizaciones.html" class="w3-bar-item w3-button">Updates</a>
     </div>
-  </nav>
+</nav>
 
-  <!-- Main content -->
+<!-- Main content -->
 <div class="w3-main" style="margin-left:260px; padding:20px;">
     <h1 class="w3-text-blue">Home</h1>
 </div>
 
-  <!-- Main Content Area -->
+<!-- Main Content Area -->
 <div class="w3-main" style="margin-left:260px; padding:20px; text-align:center;">
-
     <h1> Nebula on-premise Version 8.0.0 </h1>
 
     <!-- Image -->
     <img src="static/images/door-placeholder.png" alt="Nebula Access Control" style="max-width:100%; height:auto; margin-top:10px;">
+
+    <!-- Update Button (Initially Hidden) -->
+    <button id="updateButton" onclick="triggerUpdate()">Update Available! Click to Apply</button>
 </div>
 
 <script>
@@ -68,17 +86,38 @@ function w3_close() {
   document.getElementById("mySidebar").style.display = "none";
 }
 
-// Accordion function
-function myAccFunc() {
-  var x = document.getElementById("demoAcc");
-  if (x) { 
-    if (x.className.indexOf("w3-show") == -1) {
-      x.className += " w3-show";
-    } else {
-      x.className = x.className.replace(" w3-show", "");
-    }
-  }
+// Function to check for updates
+function checkForUpdate() {
+    fetch('/check-update')
+        .then(response => response.json())
+        .then(data => {
+            if (data.update_available === 1) {
+                document.getElementById("updateButton").style.display = "block"; // Show button if update available
+            } else {
+                document.getElementById("updateButton").style.display = "none"; // Hide button if no update
+            }
+        })
+        .catch(error => console.error("Error checking for update:", error));
 }
+
+// Function to trigger the update
+function triggerUpdate() {
+    fetch('/apply-update', { method: 'POST' }) // Send request to backend to apply update
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("Update started! The system will restart soon.");
+                document.getElementById("updateButton").style.display = "none"; // Hide button after update starts
+            } else {
+                alert("Failed to start update.");
+            }
+        })
+        .catch(error => console.error("Error applying update:", error));
+}
+
+// Periodically check for updates every 5 minutes
+setInterval(checkForUpdate, 5 * 60 * 1000); // 5 minutes in milliseconds
+checkForUpdate(); // Check immediately on page load
 </script>
 
 </body>
