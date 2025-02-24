@@ -97,14 +97,15 @@ jobs:
         uses: actions/checkout@v3
 
       # Step 2 : Configure Go for Private odules
-      - name: Configure Go for Private Modules
+      - name: Simulating that some testings and checks are done
         run: |
-          git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
-          echo "GOPRIVATE=github.com/saltosystems-internal/x" >> $GITHUB_ENV
-      
-      - name: Build general-service binary
-        run: |
-          GOOS=linux GOARCH=amd64 go build -o general-service cmd/general-service/main.go
+          # Getting the tag name
+          echo "tag=${{github.ref_name}}">>$GITHUB_ENV
+          echo "Simulating that some testings and checks are done"
+
+          ## Getting the repository name
+          repo_name=$(basename "${{ github.repository }}")
+          echo "repo_name=$repo_name" >> $GITHUB_ENV
 
       # Step 3: Getting the .zip that wants to be relased 
       - name: Getting the -zip 
