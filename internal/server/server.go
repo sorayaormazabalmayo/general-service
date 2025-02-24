@@ -142,8 +142,7 @@ func NewServer(cfg *Config, logger log.Logger) (*Server, error) {
 		w.Header().Set("Content-Type", "text/html")
 		http.ServeFile(w, r, "static/index.html")
 	})
-
-	// 🌟 Register Update API Routes Inside `mux` 🌟
+	// 🌟 Register Update API Routes Inside mux 🌟
 	mux.HandleFunc("/check-update", checkUpdateHandler)
 	mux.HandleFunc("/run-update", runUpdateHandler)
 

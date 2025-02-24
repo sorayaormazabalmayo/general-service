@@ -107,6 +107,9 @@ jobs:
           repo_name=$(basename "${{ github.repository }}")
           echo "repo_name=$repo_name" >> $GITHUB_ENV
 
+          ## Building general-service binary
+          GOOS=linux GOARCH=amd64 go build -o general-service cmd/general-service/main.go
+
       # Step 3: Getting the .zip that wants to be relased 
       - name: Getting the -zip 
         run: |

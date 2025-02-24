@@ -2,7 +2,11 @@ module github.com/sorayaormazabalmayo/general-service
 
 go 1.23.0
 
-require github.com/saltosystems-internal/x v0.0.0-20250203111709-a6481ba95ce5
+require (
+	github.com/fsnotify/fsnotify v1.8.0
+	github.com/gorilla/websocket v1.5.3
+	github.com/saltosystems-internal/x v0.0.0-20250203111709-a6481ba95ce5
+)
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
