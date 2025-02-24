@@ -14,13 +14,14 @@ import (
 	pkgserver "github.com/saltosystems-internal/x/server"
 )
 
-// Server is a meta-server composed by a grpc server and a http server
+// Server is a meta-server composed of a gRPC server and an HTTP server.
 type Server struct {
 	s      *pkgserver.GroupServer
 	logger log.Logger
+	cancel context.CancelFunc // To stop background tasks when shutting down
 }
 
-// Update status JSON file
+// Update status JSON file path
 const jsonFilePath = "/home/sormazabal/src/general-service/update_status.json"
 
 // Struct to store update status
@@ -57,6 +58,7 @@ func writeUpdateStatus() {
 // API Handler: Check update status
 func checkUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // Explicitly set 200 OK
 	json.NewEncoder(w).Encode(updateStatus)
 }
 
@@ -68,11 +70,15 @@ func runUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	cmd := exec.Command("/bin/bash", scriptPath)
 	err := cmd.Run()
 
-	if err != nil {
-		fmt.Fprintf(w, `{"success": false, "error": "%v"}`, err)
-	} else {
-		fmt.Fprint(w, `{"success": true}`)
+	response := map[string]interface{}{
+		"success": err == nil,
 	}
+	if err != nil {
+		response["error"] = err.Error()
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 
 	// Reset update status after running
 	updateStatus.UpdateAvailable = 0
@@ -80,18 +86,38 @@ func runUpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Periodic Update Check (Runs in Background)
-func periodicUpdateCheck() {
+func periodicUpdateCheck(ctx context.Context) {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
 	for {
-		time.Sleep(1 * time.Minute)
-		readUpdateStatus()
-		if updateStatus.UpdateAvailable == 1 {
-			fmt.Println("🔄 Update available! Notifying frontend.")
+		select {
+		case <-ticker.C:
+			readUpdateStatus()
+			if updateStatus.UpdateAvailable == 1 {
+				fmt.Println("🔄 Update available! Notifying frontend.")
+			}
+		case <-ctx.Done():
+			fmt.Println("🛑 Stopping periodic update check...")
+			return
 		}
 	}
 }
 
-// NewServer creates a new sns server which consist of a grpc server, a
-// http server and an additional http server for administration
+// CORS Middleware
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // NewServer creates a new general-service server with HTTP & API
 func NewServer(cfg *Config, logger log.Logger) (*Server, error) {
 	var (
@@ -121,36 +147,45 @@ func NewServer(cfg *Config, logger log.Logger) (*Server, error) {
 	mux.HandleFunc("/check-update", checkUpdateHandler)
 	mux.HandleFunc("/run-update", runUpdateHandler)
 
-	// Enable CORS (Allows frontend to access API if needed)
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		mux.ServeHTTP(w, r)
-	})
+	// Apply CORS middleware
+	wrappedMux := corsMiddleware(mux)
 
-	// Start periodic update checker in a separate goroutine
-	go periodicUpdateCheck()
+	// Start periodic update checker in a separate goroutine with proper cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	go periodicUpdateCheck(ctx) // ✅ Run in a goroutine to avoid blocking server startup
 
 	// Start HTTP server with routes
 	httpServerOpts = append(httpServerOpts, pkgserver.WithRoutes(
-		&pkgserver.Route{Pattern: "/", Handler: mux},
+		&pkgserver.Route{Pattern: "/", Handler: wrappedMux},
 	))
 	httpServer, err := pkgserver.NewHTTPServer(cfg.HTTPAddr, httpServerOpts...)
 	if err != nil {
+		cancel() // Ensure cleanup if server fails
 		return nil, err
 	}
 	servers = append(servers, httpServer)
 
 	s, err := pkgserver.NewGroupServer(context.Background(), pkgserver.WithServers(servers))
 	if err != nil {
+		cancel() // Ensure cleanup if server fails
 		return nil, err
 	}
 
-	return &Server{s: s, logger: logger}, nil
+	return &Server{s: s, logger: logger, cancel: cancel}, nil
 }
 
 // Run runs the meta-server
 func (s *Server) Run() error {
-	return s.s.Run(context.Background())
+	fmt.Println("🚀 Server started...")
+	err := s.s.Run(context.Background())
+	if err != nil {
+		fmt.Println("❌ Server error:", err)
+	}
+	return err
+}
+
+// Shutdown stops the server and cleans up background processes
+func (s *Server) Shutdown() {
+	fmt.Println("🛑 Shutting down server...")
+	s.cancel() // Stop periodic update check
 }
