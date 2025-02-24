@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"mime"
 	"net/http"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/saltosystems-internal/x/log"
 	pkgserver "github.com/saltosystems-internal/x/server"
+	"golang.org/x/oauth2/google"
 )
 
 // Server is a meta-server composed of a gRPC server and an HTTP server.
@@ -21,13 +24,27 @@ type Server struct {
 	cancel context.CancelFunc // To stop background tasks when shutting down
 }
 
-// Update status JSON file path
-const jsonFilePath = "/home/sormazabal/src/SALTO/update_status.json"
+type indexInfo struct {
+	Bytes  string `json:"bytes"`
+	Path   string `json:"path"`
+	Hashes struct {
+		Sha256 string `json:"sha256"`
+	} `json:"hashes"`
+	Version     string `json:"version"`
+	ReleaseDate string `json:"release-date"`
+}
 
 // Struct to store update status
 var updateStatus = struct {
 	UpdateAvailable int `json:"update_available"`
 }{UpdateAvailable: 0} // Default: No update
+
+var (
+	serviceAccountKeyPath = "/home/sormazabal/artifact-downloader-key.json"
+	service               = "general-service"
+	targetIndexFile       = filepath.Join("data", service, fmt.Sprintf("%s-index.json", service))
+	jsonFilePath          = "/home/sormazabal/src/SALTO/update_status.json"
+)
 
 // Read update status from file
 func readUpdateStatus() {
@@ -62,32 +79,140 @@ func checkUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updateStatus)
 }
 
-// API Handler: Apply Update (Runs Bash Script)
 func runUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("⚙️ Running update script...")
-	scriptPath := "/var/lib/your-app/update.sh"
-
-	cmd := exec.Command("/bin/bash", scriptPath)
-	err := cmd.Run()
-
-	response := map[string]interface{}{
-		"success": err == nil,
+	if r.Method != http.MethodPost { // ✅ Ensure it's a POST request
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
 	}
+
+	fmt.Println("⚙️ Running update process...")
+
+	err := performUpdate() // ✅ Run the update directly in Go
 	if err != nil {
-		response["error"] = err.Error()
+		response := map[string]interface{}{"success": false, "error": err.Error()}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(map[string]bool{"success": true}) // ✅ Ensure valid JSON response
+}
 
-	// Reset update status after running
-	updateStatus.UpdateAvailable = 0
-	writeUpdateStatus()
+func performUpdate() error {
+	// Download new binary, verify, replace old binary, restart service
+	newBinaryPath := "opt/SALTO/tmp/general-service"
+	destinationPath := "/opt/your-app/general-service"
+
+	var data map[string]indexInfo
+
+	// Parse JSON into the map
+	err := json.Unmarshal([]byte(targetIndexFile), &data)
+	if err != nil {
+		fmt.Printf("\U0001F534Error parsing JSON: %v\U0001F534", err)
+	}
+
+	// Getting service path
+	servicePath := data[service].Path
+
+	// Download the artifact without specifying the file type
+	err = downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath)
+	if err != nil {
+		fmt.Printf("\U0001F534Failed to download binary: %v\U0001F534\n", err)
+		os.Exit(1)
+	}
+
+	// Make sure the new binary is executable
+	err = os.Chmod(newBinaryPath, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to set executable permissions: %w", err)
+	}
+
+	//*
+
+	// Replace old binary
+	err = os.Rename(newBinaryPath, destinationPath)
+	if err != nil {
+		return fmt.Errorf("failed to replace binary: %w", err)
+	}
+
+	// Restart the application (or notify an external service manager)
+	return err
+
+}
+
+// Downloading the artifact
+
+func downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath string) error {
+	// Authenticate using the service account key
+	ctx := context.Background()
+	creds, err := google.CredentialsFromJSON(ctx, readFile(serviceAccountKeyPath), "https://www.googleapis.com/auth/cloud-platform")
+	if err != nil {
+		return fmt.Errorf("failed to load service account credentials: %w", err)
+	}
+
+	// Create HTTP client with the token
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", servicePath, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add Authorization header with Bearer token
+	token, err := creds.TokenSource.Token()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve token: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token.AccessToken)
+
+	// Perform the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download artifact, status code: %d", resp.StatusCode)
+	}
+
+	// Determine the file name from the Content-Disposition header or use a default name
+	contentDisposition := resp.Header.Get("Content-Disposition")
+	fileName := newBinaryPath
+	if contentDisposition != "" {
+		_, params, err := mime.ParseMediaType(contentDisposition)
+		if err == nil {
+			if name, ok := params["filename"]; ok {
+				fileName = name
+			}
+		}
+	}
+	fmt.Printf("Saving file as: %s\n", fileName)
+
+	// Write the response to a file
+	out, err := os.Create(fileName)
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+// readFile reads the content of the service account key JSON file
+func readFile(path string) []byte {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		fmt.Printf("\U0001F534Error reading file %s: %v\U0001F534\n", path, err)
+		os.Exit(1)
+	}
+	return content
 }
 
 // Periodic Update Check (Runs in Background)
 func periodicUpdateCheck(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
