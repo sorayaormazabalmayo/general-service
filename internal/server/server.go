@@ -22,7 +22,7 @@ type Server struct {
 }
 
 // Update status JSON file path
-const jsonFilePath = "/home/sormazabal/src/general-service/update_status.json"
+const jsonFilePath = "/home/sormazabal/src/SALTO/update_status.json"
 
 // Struct to store update status
 var updateStatus = struct {
