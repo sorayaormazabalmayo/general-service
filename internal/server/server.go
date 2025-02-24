@@ -43,7 +43,7 @@ var (
 	serviceAccountKeyPath = "/home/sormazabal/artifact-downloader-key.json"
 	service               = "general-service"
 	targetIndexFile       = filepath.Join("data", service, fmt.Sprintf("%s-index.json", service))
-	jsonFilePath          = "/home/sormazabal/src/SALTO/update_status.json"
+	jsonFilePath          = "/home/sormazabal/src/general-service/update_status.json"
 )
 
 // Read update status from file
@@ -212,7 +212,7 @@ func readFile(path string) []byte {
 
 // Periodic Update Check (Runs in Background)
 func periodicUpdateCheck(ctx context.Context) {
-	ticker := time.NewTicker(10 * time.Second)
+	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
 
 	for {
