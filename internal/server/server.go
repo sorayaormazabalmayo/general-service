@@ -94,7 +94,7 @@ func runUpdateHandler(w http.ResponseWriter, r *http.Request) {
 func performUpdate() error {
 	// Download new binary, verify, replace old binary, restart service
 	newBinaryPath := "/home/sormazabal/src/SALTO/tmp/general-service.zip"
-	destinationPath := "/home/sormazabal/src/SALTO/tmp/general-service.zip"
+	destinationPath := "/home/sormazabal/src/SALTO/general-service.zip"
 
 	// Generating the temporary folder
 

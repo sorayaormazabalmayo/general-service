@@ -26,20 +26,24 @@ func main() {
 
 	// Unzipping the donwloaded file
 
-	zipPath := "/home/sormazabal/src/general-service/tmp/general-service.zip"
-	unzipPth := "/home/sormazabal/src/general-service/tmp"
+	zipPath := "/home/sormazabal/src/SALTO/general-service.zip"
+	unzipPth := "/home/sormazabal/src/SALTO"
 
 	Unzip(zipPath, unzipPth)
 
 	// Creating a /previous foler
 	os.Mkdir("previous", 0750)
 
+	// Removing the previous files of the preivous version
+
+	RemoveContents("previous")
+
 	// Moving general-service, /static and /config to previous
 
 	// Files and folders to move
 	itemsToMove := []string{
 		"/home/sormazabal/src/general-service/general-service",
-		"/home/sormazabal/src/general-service/general-service.yml",
+		"/home/sormazabal/src/general-service/config/general-service.yml",
 		"/home/sormazabal/src/general-service/static",
 	}
 
@@ -246,5 +250,24 @@ func setUpdateStatus(value int) error {
 		return err
 	}
 
+	return nil
+}
+
+func RemoveContents(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dir, name))
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
