@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,7 +10,9 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	"github.com/saltosystems-internal/x/log"
@@ -42,8 +45,9 @@ var updateStatus = struct {
 var (
 	serviceAccountKeyPath = "/home/sormazabal/artifact-downloader-key.json"
 	service               = "general-service"
-	targetIndexFile       = filepath.Join("data", service, fmt.Sprintf("%s-index.json", service))
+	targetIndexFile       = "/home/sormazabal/src/general-service/data/general-service/general-service-index.json"
 	jsonFilePath          = "/home/sormazabal/src/general-service/update_status.json"
+	generateRandomFolder  = false
 )
 
 // Read update status from file
@@ -56,19 +60,6 @@ func readUpdateStatus() {
 	err = json.Unmarshal(file, &updateStatus)
 	if err != nil {
 		fmt.Println("⚠️ Could not parse update status JSON, using default (0)")
-	}
-}
-
-// Write update status to JSON file
-func writeUpdateStatus() {
-	file, err := json.MarshalIndent(updateStatus, "", "  ")
-	if err != nil {
-		fmt.Println("❌ Error marshalling update status:", err)
-		return
-	}
-	err = os.WriteFile(jsonFilePath, file, 0644)
-	if err != nil {
-		fmt.Println("❌ Error writing update status file:", err)
 	}
 }
 
@@ -87,6 +78,7 @@ func runUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("⚙️ Running update process...")
 
+	// Ensure `globalServerInstance` is set
 	err := performUpdate() // ✅ Run the update directly in Go
 	if err != nil {
 		response := map[string]interface{}{"success": false, "error": err.Error()}
@@ -101,15 +93,35 @@ func runUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 func performUpdate() error {
 	// Download new binary, verify, replace old binary, restart service
-	newBinaryPath := "opt/SALTO/tmp/general-service"
-	destinationPath := "/opt/your-app/general-service"
+	newBinaryPath := "/home/sormazabal/src/general-service/tmp/general-service.zip"
+	destinationPath := "/home/sormazabal/src/general-service/tmp/general-service.zip"
+
+	// Generating the temporary folder
+
+	// get working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current working directory: %w", err)
+	}
+	tmpDir := filepath.Join(cwd, "tmp")
+	// create a temporary folder for storing the demo artifacts
+	os.Mkdir(tmpDir, 0750)
 
 	var data map[string]indexInfo
 
+	fmt.Printf("The index file is located in: %s \n", targetIndexFile)
+
+	// Read the actual JSON file content
+	fileContent, err := os.ReadFile(targetIndexFile)
+	if err != nil {
+		return fmt.Errorf("failed to read index file: %w", err)
+	}
+
 	// Parse JSON into the map
-	err := json.Unmarshal([]byte(targetIndexFile), &data)
+	err = json.Unmarshal(fileContent, &data)
 	if err != nil {
 		fmt.Printf("\U0001F534Error parsing JSON: %v\U0001F534", err)
+		return err
 	}
 
 	// Getting service path
@@ -128,14 +140,33 @@ func performUpdate() error {
 		return fmt.Errorf("failed to set executable permissions: %w", err)
 	}
 
-	//*
+	err = verifyingDownloadedFile(targetIndexFile, newBinaryPath)
 
-	// Replace old binary
-	err = os.Rename(newBinaryPath, destinationPath)
-	if err != nil {
-		return fmt.Errorf("failed to replace binary: %w", err)
+	if err == nil {
+		// Replace old binary
+		err = os.Rename(newBinaryPath, destinationPath)
+		if err != nil {
+			return fmt.Errorf("failed to replace binary: %w", err)
+		}
 	}
 
+	// Calling the upgrader
+	cmd := exec.Command("./upgrader")
+
+	// Attach the output to the console
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// Start the new process
+	err = cmd.Start()
+	if err != nil {
+		return fmt.Errorf("failed to execute the upgrader: %w", err)
+	}
+	// Telling that the Update has been successful.
+	fmt.Println("✅ Update successful. Shutting down server...")
+
+	// handleShutdown waits for a termination signal and shuts down the server
+	syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	// Restart the application (or notify an external service manager)
 	return err
 
@@ -210,9 +241,74 @@ func readFile(path string) []byte {
 	return content
 }
 
+// Verifying a file
+func verifyingDownloadedFile(targetIndexFile, DonwloadedFilePath string) error {
+
+	var data map[string]indexInfo
+
+	// Read the actual JSON file content
+	fileContent, err := os.ReadFile(targetIndexFile)
+	if err != nil {
+		return fmt.Errorf("failed to read index file: %w", err)
+	}
+
+	// Parse JSON into the map
+	err = json.Unmarshal(fileContent, &data)
+	if err != nil {
+		fmt.Printf("\U0001F534Error parsing JSON: %v\U0001F534", err)
+		return err
+	}
+
+	indexHash := data[service].Hashes.Sha256
+
+	fmt.Printf("\nThe hash from the nebula-service-index.json is %s", indexHash)
+
+	// Computing the hash of the downloaded file
+
+	// Compute the SHA256 hash
+	downloadedFilehash, err := ComputeSHA256(DonwloadedFilePath)
+
+	fmt.Printf("Downloaded file hash is: %s\n", downloadedFilehash)
+
+	if err != nil {
+		fmt.Printf("\U0001F534Error computing hash: %v\U0001F534\n", err)
+		return fmt.Errorf("error while computing the hash")
+	}
+
+	if indexHash == downloadedFilehash {
+		fmt.Printf("\U0001F7E2The target file has been downloaded successfully!\U0001F7E2\n")
+	} else {
+		return fmt.Errorf("there has been an error while downloading the file, the hashes do not match")
+	}
+	return nil
+}
+
+// Computing the SHA256 of a file
+func ComputeSHA256(filePath string) (string, error) {
+	// Open the file
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close()
+
+	// Create a SHA256 hash object
+	hasher := sha256.New()
+
+	// Copy the file contents into the hasher
+	// This reads the file in chunks to handle large files efficiently
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", fmt.Errorf("failed to compute hash: %w", err)
+	}
+
+	// Get the final hash as a byte slice and convert to a hexadecimal string
+	hash := hasher.Sum(nil)
+	return fmt.Sprintf("%x", hash), nil
+}
+
 // Periodic Update Check (Runs in Background)
 func periodicUpdateCheck(ctx context.Context) {
-	ticker := time.NewTicker(1 * time.Minute)
+	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -308,8 +404,10 @@ func (s *Server) Run() error {
 	return err
 }
 
-// Shutdown stops the server and cleans up background processes
+// Gracefully shutdown the server
 func (s *Server) Shutdown() {
 	fmt.Println("🛑 Shutting down server...")
-	s.cancel() // Stop periodic update check
+	s.cancel()
+	time.Sleep(1 * time.Second) // Allow cleanup
+	fmt.Println("✅ Server stopped.")
 }

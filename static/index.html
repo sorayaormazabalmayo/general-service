@@ -101,19 +101,18 @@ function checkForUpdate() {
 
 // Function to trigger the update
 function triggerUpdate() {
-    fetch('/run-update', { method: 'POST' }) // ✅ FIXED: Corrected endpoint
+    fetch('/run-update', { method: 'POST' }) // Send request to backend to apply update
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 alert("Update started! The system will restart soon.");
                 document.getElementById("updateButton").style.display = "none"; // Hide button after update starts
             } else {
-                alert("Failed to start update: " + (data.error || "Unknown error"));
+                alert("Failed to start update.");
             }
         })
         .catch(error => console.error("Error applying update:", error));
 }
-
 
 // Periodically check for updates every 5 minutes
 setInterval(checkForUpdate, 1 * 60 * 1000); // 5 minutes in milliseconds
