@@ -110,7 +110,7 @@ jobs:
       # Step 3: Getting the .zip that wants to be relased 
       - name: Getting the -zip 
         run: |
-         zip -r general-service.zip general-service config/general-service.yml static/     
+         zip -r general-service.zip general-service config/ static/     
 
       # Step 4: Compute the SHA256
       - name: Compute the SHA256 of the .zip
