@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -9,6 +10,16 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+)
+
+// Struct to store update status
+type UpdateStatus struct {
+	UpdateAvailable int `json:"update_available"`
+}
+
+var (
+	// Path to the JSON file
+	jsonFilePath = "update_status.json"
 )
 
 func main() {
@@ -48,6 +59,10 @@ func main() {
 	tmpDirectory := "/home/sormazabal/src/general-service/tmp"
 
 	moveContentsOutOfTmp(tmpDirectory)
+
+	// Setting update status to 0
+
+	setUpdateStatus(0)
 
 	// Setting the server
 
@@ -128,7 +143,7 @@ func moveContentsOutOfTmp(tmpDir string) error {
 // restartServer executes "./general-service serve --config=config/general-service.yml"
 func restartServer() error {
 	// Define the command and its arguments
-	cmd := exec.Command("./general-service", "serve", "--config=general-service.yml")
+	cmd := exec.Command("./general-service", "serve", "--config=config/general-service.yml")
 
 	// Attach the output to the console
 	cmd.Stdout = os.Stdout
@@ -211,5 +226,25 @@ func Unzip(src, dest string) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// Function to update update_status.json
+func setUpdateStatus(value int) error {
+	// Create struct with new value
+	updateStatus := UpdateStatus{UpdateAvailable: value}
+
+	// Convert struct to JSON
+	file, err := json.MarshalIndent(updateStatus, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	// Write JSON to file
+	err = os.WriteFile(jsonFilePath, file, 0644)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

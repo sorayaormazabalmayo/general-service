@@ -45,8 +45,8 @@ var updateStatus = struct {
 var (
 	serviceAccountKeyPath = "/home/sormazabal/artifact-downloader-key.json"
 	service               = "general-service"
-	targetIndexFile       = "/home/sormazabal/src/general-service/data/general-service/general-service-index.json"
-	jsonFilePath          = "/home/sormazabal/src/general-service/update_status.json"
+	targetIndexFile       = "/home/sormazabal/src/SALTO/data/general-service/general-service-index.json"
+	jsonFilePath          = "/home/sormazabal/src/SALTO/update_status.json"
 	generateRandomFolder  = false
 )
 
@@ -93,8 +93,8 @@ func runUpdateHandler(w http.ResponseWriter, r *http.Request) {
 
 func performUpdate() error {
 	// Download new binary, verify, replace old binary, restart service
-	newBinaryPath := "/home/sormazabal/src/general-service/tmp/general-service.zip"
-	destinationPath := "/home/sormazabal/src/general-service/tmp/general-service.zip"
+	newBinaryPath := "/home/sormazabal/src/SALTO/tmp/general-service.zip"
+	destinationPath := "/home/sormazabal/src/SALTO/tmp/general-service.zip"
 
 	// Generating the temporary folder
 
