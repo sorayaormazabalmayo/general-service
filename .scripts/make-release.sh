@@ -2,12 +2,7 @@
 
 # Building the binary that is going to be released 
 GOOS=linux GOARCH=amd64 go build -o general-service cmd/general-service/main.go  
-
-
-# Building the zip that will be released to clients
-
- zip general-service.zip general-service general-service.yml static      
-
+   
 # Exit script on any error
 set -e
 
