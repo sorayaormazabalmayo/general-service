@@ -42,13 +42,13 @@ func main() {
 
 	// Files and folders to move
 	itemsToMove := []string{
-		"/home/sormazabal/src/general-service/general-service",
-		"/home/sormazabal/src/general-service/config/general-service.yml",
-		"/home/sormazabal/src/general-service/static",
+		"/home/sormazabal/src/SALTO/general-service",
+		"/home/sormazabal/src/SALTO/config",
+		"/home/sormazabal/src/SALTO/static",
 	}
 
 	// Target directory
-	targetDir := "/home/sormazabal/src/general-service/previous"
+	targetDir := "/home/sormazabal/src/SALTO/previous"
 
 	// Move files and folders
 	err := moveContentsToDir(itemsToMove, targetDir)
@@ -60,7 +60,7 @@ func main() {
 
 	// Moving the files inside tmp outside
 
-	tmpDirectory := "/home/sormazabal/src/general-service/tmp"
+	tmpDirectory := "/home/sormazabal/src/SALTO/tmp"
 
 	moveContentsOutOfTmp(tmpDirectory)
 
