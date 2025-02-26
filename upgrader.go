@@ -29,8 +29,6 @@ func main() {
 	zipPath := "/home/sormazabal/src/SALTO/general-service.zip"
 	unzipPth := "/home/sormazabal/src/SALTO"
 
-	Unzip(zipPath, unzipPth)
-
 	// Creating a /previous foler
 	os.Mkdir("previous", 0750)
 
@@ -58,11 +56,7 @@ func main() {
 		fmt.Println("✅ All items moved successfully!")
 	}
 
-	// Moving the files inside tmp outside
-
-	tmpDirectory := "/home/sormazabal/src/SALTO/tmp"
-
-	moveContentsOutOfTmp(tmpDirectory)
+	Unzip(zipPath, unzipPth)
 
 	// Setting update status to 0
 
