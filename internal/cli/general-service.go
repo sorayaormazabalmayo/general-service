@@ -3,20 +3,15 @@ package cli
 import (
 	"context"
 	"flag"
-	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
+	"sync"
 
 	"github.com/peterbourgon/ff/v4"
 	"github.com/saltosystems-internal/x/log"
 	"github.com/sorayaormazabalmayo/general-service/internal/server"
+	"github.com/sorayaormazabalmayo/general-service/internal/updater"
 )
 
-// Global variable to store the running server instance
-var globalServerInstance *server.Server
-
-// NewGeneralServiceCommand creates and returns the root CLI command
+// NewGeneralServiceCommand creates and returns the root CLI command.
 func NewGeneralServiceCommand(logger log.Logger) ff.Command {
 	fs := ff.NewFlagSet("general-service")
 
@@ -30,11 +25,13 @@ func NewGeneralServiceCommand(logger log.Logger) ff.Command {
 		},
 		Subcommands: []*ff.Command{
 			newServeCommand(logger),
+			newUpdateCommand(),
+			newServeAndUpdateCommand(logger),
 		},
 	}
 }
 
-// newServeCommand returns a usable ff.Command for the serve subcommand
+// newServeCommand returns a usable ff.Command for the serve subcommand.
 func newServeCommand(logger log.Logger) *ff.Command {
 	// Configuration structure
 	cfg := &server.Config{}
@@ -72,9 +69,6 @@ func newServeCommand(logger log.Logger) *ff.Command {
 				return err
 			}
 
-			// Store the server instance globally
-			globalServerInstance = s
-
 			// Handle graceful shutdown
 			//go handleShutdown()
 
@@ -84,19 +78,72 @@ func newServeCommand(logger log.Logger) *ff.Command {
 	return cmd
 }
 
-// handleShutdown waits for a termination signal and shuts down the server
-func handleShutdown() {
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt, syscall.SIGTERM) // Catch Ctrl+C or SIGTERM
-
-	<-sig // Wait for the shutdown signal
-
-	fmt.Println("\n🛑 Received shutdown signal. Stopping server...")
-
-	if globalServerInstance != nil {
-		globalServerInstance.Shutdown()
+// newUpdateCommand sets the updater.
+func newUpdateCommand() *ff.Command {
+	// Create a flag set for the "update" subcommand.
+	fs := ff.NewFlagSet("update")
+	return &ff.Command{
+		Name:      "update",
+		ShortHelp: "Run the updater",
+		Flags:     fs,
+		Exec: func(ctx context.Context, args []string) error {
+			return updater.Run()
+		},
 	}
+}
 
-	fmt.Println("✅ Server shut down successfully.")
-	os.Exit(0)
+// newServeAndUpdateCommand runs both serve and update concurrently.
+func newServeAndUpdateCommand(logger log.Logger) *ff.Command {
+	// Create a configuration structure that will be populated from the flags.
+	cfg := &server.Config{}
+
+	// Create the flag set and declare all flags here.
+	fs := ff.NewFlagSet("serve-and-update")
+	_ = fs.String(0, "config", "", "config file in yaml format")
+	fs.StringVar(&cfg.HTTPAddr, 0, "http-addr", "localhost:8000", "HTTP address")
+	fs.StringVar(&cfg.InternatHTTPAddr, 0, "internal-http-addr", "localhost:9000", "Internal HTTP address")
+	fs.BoolVarDefault(&cfg.Debug, 0, "debug", false, "Enable debug")
+	fs.BoolVarDefault(&cfg.AutoUpdate, 0, "auto-update", false, "Enable updater")
+	fs.StringVar(&cfg.MetadataURL, 0, "metadata-url", "https://sorayaormazabalmayo.github.io/TUF_Repository_YubiKey_Vault/metadata", "Metadata URL")
+
+	cmd := &ff.Command{
+		Name:      "serve-and-update",
+		ShortHelp: "Run both serve and update concurrently",
+		Flags:     fs,
+		Exec: func(ctx context.Context, args []string) error {
+			var wg sync.WaitGroup
+			wg.Add(2)
+
+			// Launch the server using the parsed config.
+			go func() {
+				defer wg.Done()
+				if cfg.Debug {
+					if err := logger.SetAllowedLevel(log.AllowDebug()); err != nil {
+						logger.Error("failed to set debug level", "error", err)
+					}
+				}
+				s, err := server.NewServer(cfg, logger)
+				if err != nil {
+					logger.Error("failed to create server", "error", err)
+					return
+				}
+				if err := s.Run(); err != nil {
+					logger.Error("server error", "error", err)
+				}
+			}()
+
+			// Launch the updater.
+			go func() {
+				defer wg.Done()
+				if err := updater.Run(); err != nil {
+					logger.Error("update command error", "error", err)
+				}
+			}()
+
+			// Wait for both goroutines to finish.
+			wg.Wait()
+			return nil
+		},
+	}
+	return cmd
 }
