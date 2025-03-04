@@ -4,10 +4,12 @@ import (
 	"archive/zip"
 	"context"
 	"crypto/sha256"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"mime"
 	"net/http"
 	"os"
@@ -21,6 +23,11 @@ import (
 	pkgserver "github.com/saltosystems-internal/x/server"
 	"golang.org/x/oauth2/google"
 )
+
+//go:embed static/index.html
+//go:embed static/actualizaciones.html
+//go:embed static/images/*
+var staticFiles embed.FS
 
 // Server is a meta-server composed of a gRPC server and an HTTP server.
 type Server struct {
@@ -340,15 +347,26 @@ func NewServer(cfg *Config, logger log.Logger) (*Server, error) {
 	// Create HTTP Multiplexer
 	mux := http.NewServeMux()
 
-	// Serve static files from the "static" directory
-	fs := http.FileServer(http.Dir("static"))
-	mux.Handle("/static/", http.StripPrefix("/static/", fs))
+	// Create a sub-filesystem for the "static" directory
+	staticFS, err := fs.Sub(staticFiles, "static")
+	if err != nil {
+		return nil, err
+	}
 
-	// Serve index.html (Home Page)
+	// Serve static files from the embedded filesystem.
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+
+	// Serve index.html from the embedded files
 	mux.HandleFunc("/nebula", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
-		http.ServeFile(w, r, "static/index.html")
+		data, err := staticFiles.ReadFile("static/index.html")
+		if err != nil {
+			http.Error(w, "Index file not found", http.StatusInternalServerError)
+			return
+		}
+		w.Write(data)
 	})
+
 	// 🌟 Register Update API Routes Inside mux 🌟
 	mux.HandleFunc("/check-update", checkUpdateHandler)
 	mux.HandleFunc("/run-update", runUpdateHandler)
@@ -407,7 +425,7 @@ func (s *Server) Shutdown() {
 // It performs the backup. It moves the current binary to the folder /previous.
 func backup(ctx context.Context) {
 
-	fmt.Printf("🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷")
+	fmt.Printf("🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷🌷\n")
 	// Determine the absolute path of the current binary.
 	currentBinary := os.Args[0]
 	absCurrent, err := filepath.Abs(currentBinary)
