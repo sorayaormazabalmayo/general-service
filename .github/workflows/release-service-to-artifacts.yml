@@ -96,7 +96,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # Step 2 : Configure Go for Private modules
+      # Step 2 : Configure Go for Private odules
       - name: Simulating that some testings and checks are done
         run: |
           # Getting the tag name
@@ -106,19 +106,14 @@ jobs:
           ## Getting the repository name
           repo_name=$(basename "${{ github.repository }}")
           echo "repo_name=$repo_name" >> $GITHUB_ENV
-        
-      # Step 3: Building the binary
-      - name: Build Binary
-        run: |
-          GOOS=linux GOARCH=amd64 go build -o general-service cmd/general-service/main.go
 
-      # Step 4: Getting the .zip that wants to be relased 
+      # Step 3: Getting the .zip that wants to be relased 
       # zip -r general-service.zip general-service config/ static/ 
       - name: Getting the -zip 
         run: |
          zip -r general-service.zip general-service config/
               
-      # Step 5: Compute the SHA256
+      # Step 4: Compute the SHA256
       - name: Compute the SHA256 of the .zip
         run: |
           zip_name="${{env.repo_name}}.zip"
@@ -129,7 +124,7 @@ jobs:
           echo "digest=$digest" >> $GITHUB_ENV
           echo "SHA256 checksum is: $digest"
         
-      # Step 6: Verifying GitHub Token
+      # Step 5: Verifying GitHub Token
       - name: Verify GITHUB_TOKEN
         run: |
           if [ -z "${{ secrets.GITHUB_TOKEN }}" ]; then
@@ -138,7 +133,7 @@ jobs:
           else
               echo "GITHUB_TOKEN is available."
           fi
-      # Step 7: Create a release
+      # Step 6: Create a release
       - name: Create a GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -152,7 +147,7 @@ jobs:
           draft: false
           prerelease: false
 
-      # Step 8: Upload the ZIP file as a release asset
+      # Step 7: Upload the ZIP file as a release asset
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         with:
@@ -161,7 +156,7 @@ jobs:
           asset_name: ${{ env.zip_name }}
           asset_content_type: application/zip
           
-      # Step 9: Login to Google Cloud Registry
+      # Step 8: Login to Google Cloud Registry
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v2
         with: 
@@ -170,13 +165,13 @@ jobs:
           service_account: github-actions-auth@polished-medium-445107-i9.iam.gserviceaccount.com
           access_token_lifetime: '600s'
 
-      # Step 10: Setting environment variables
+      # Step 9: Setting environment variables
       - name: Set Environment Variables
         run: |
           echo "Setting environment variables..."
           echo "service_name=$(echo "${GITHUB_REPOSITORY}" | cut -d'/' -f2)" >> $GITHUB_ENV
 
-      # Step 11: Upload each built artifact to Google Artifact Registry
+      # Step 10: Upload each built artifact to Google Artifact Registry
       - name: Upload artifacts from bin to Google Artifact Registry
         id: pushing-GAR
         run: |
@@ -196,7 +191,7 @@ jobs:
           echo "Uploaded $artifact_name to Google Artifact Registry"
           echo "Successfully uploaded all artifacts to Google Artifact Registry"
       
-      # Step 12: Getting the SHA of the uploaded file to GAR
+      # Step 11: Getting the SHA of the uploaded file to GAR
       - name: Getting the SHA of the uploaded file to GAR
         id: getting-GAR-digest
         env:
@@ -253,7 +248,7 @@ jobs:
 
 
 
-      # Step 13: Getting the digest of the GitHub Release
+      # Step 12: Getting the digest of the GitHub Release
       - name: Getting the digest of the GitHub Release
         id: getting-GitHub-Release-digest
         env:
@@ -286,7 +281,7 @@ jobs:
           echo "github_release_sha256=$github_zip_sha256" >> $GITHUB_ENV
     
 
-      # Step 14: Verifying the SHA256 checksum of GAR vs. GitHub Release
+      # Step 13: Verifying the SHA256 checksum of GAR vs. GitHub Release
       - name: Verifying SHA256 Checksums
         id: verifying-digests
         env:
