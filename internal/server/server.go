@@ -56,11 +56,11 @@ var UpdateStatus = struct {
 var (
 	serviceAccountKeyPath = "/home/sormazabal/artifact-downloader-key.json"
 	service               = "general-service"
-	targetIndexFile       = "/home/sormazabal/GoPlayground/data/general-service/general-service-index.json"
-	jsonFilePath          = "/home/sormazabal/GoPlayground/update_status.json"
-	newBinaryPath         = "/home/sormazabal/GoPlayground/tmp/general-service.zip"
-	destinationPath       = "/home/sormazabal/GoPlayground/general-service.zip"
-	destinationPathUnzip  = "/home/sormazabal/GoPlayground"
+	targetIndexFile       = "/home/sormazabal/src/SALTO2/data/general-service/general-service-index.json"
+	jsonFilePath          = "/home/sormazabal/src/SALTO2/update_status.json"
+	newBinaryPath         = "/home/sormazabal/src/SALTO2/tmp/general-service.zip"
+	destinationPath       = "/home/sormazabal/src/SALTO2/general-service.zip"
+	destinationPathUnzip  = "/home/sormazabal/src/SALTO2"
 )
 
 // Read update status from the update_status.json.
