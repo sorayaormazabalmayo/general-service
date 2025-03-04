@@ -461,6 +461,10 @@ func unzipAndSetStatus(ctx context.Context) {
 		fmt.Println("✅ Successfully unzipped the new binary.")
 	}
 
+	// Removing what has been unzipped
+
+	os.Remove(destinationPath)
+
 	// Setting update status to 0
 
 	setUpdateStatus(0)
