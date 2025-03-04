@@ -461,8 +461,10 @@ func unzipAndSetStatus(ctx context.Context) {
 		fmt.Println("✅ Successfully unzipped the new binary.")
 	}
 
-	// Setting update status to 0
+	// Removing the zip that has been unzip
+	os.Remove(destinationPath)
 
+	// Setting update status to 0
 	setUpdateStatus(0)
 
 	// Setting the server
@@ -471,7 +473,6 @@ func unzipAndSetStatus(ctx context.Context) {
 	if err != nil {
 		fmt.Println("❌ Restart failed:", err)
 	}
-
 }
 
 // Unzipping a .zip and relocating it.
@@ -528,7 +529,6 @@ func Unzip(src, dest string) error {
 		}
 		return nil
 	}
-
 	for _, f := range r.File {
 		err := extractAndWriteFile(f)
 		if err != nil {
@@ -555,7 +555,6 @@ func setUpdateStatus(value int) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
