@@ -17,7 +17,7 @@ commit_hash=$(git rev-parse --short HEAD)
 
 # Variable for the tag 
 
-tag="v${current_date}-sha${commit_hash}"
+tag="v${current_date}-sha.${commit_hash}"
 
 # Output the future release tag 
 
