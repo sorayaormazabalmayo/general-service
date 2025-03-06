@@ -68,7 +68,7 @@
 
 <!-- Main Content Area -->
 <div class="w3-main" style="margin-left:260px; padding:20px; text-align:center;">
-    <h1> Nebula Version 51 </h1>
+    <h1> Nebula Version 52</h1>
 
     <!-- Image -->
     <img src="static/images/door-placeholder.png" alt="Nebula Access Control" style="max-width:100%; height:auto; margin-top:10px;">
@@ -83,6 +83,16 @@
 </div>
 
 <script>
+
+    // Check if the page has been reloaded in this session
+if (!sessionStorage.getItem('reloaded')){
+    // Set the flag to prevent future reloads in this session
+    sessionStorage.setItem('reloaded','true');
+    // Reload the page 
+    window.location.reload(); 
+}
+
+
 // Open and close sidebar
 function w3_open() {
   document.getElementById("mySidebar").style.display = "block";
