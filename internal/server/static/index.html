@@ -68,7 +68,7 @@
 
 <!-- Main Content Area -->
 <div class="w3-main" style="margin-left:260px; padding:20px; text-align:center;">
-    <h1> Nebula Version 56</h1>
+    <h1> Nebula Version 57</h1>
 
     <!-- Image -->
     <img src="static/images/door-placeholder.png" alt="Nebula Access Control" style="max-width:100%; height:auto; margin-top:10px;">
@@ -83,8 +83,6 @@
 </div>
 
 <script>
-
-
 // Open and close sidebar
 function w3_open() {
   document.getElementById("mySidebar").style.display = "block";
@@ -110,10 +108,41 @@ function checkForUpdate() {
 
 // Function to trigger the update
 function triggerUpdate() {
+
     fetch('/run-update', { method: 'POST' }) // Send request to backend to apply update 
     alert("Update started! The page will reload soon.");
     document.getElementById("updateButton").style.display = "none";
+    document.getElementById("updateWarning").style.display="none";
+
+    checkServerStatus(); 
                 
+}
+
+// Function to repeatedly check if /nebula is accessible
+function checkServerStatus() {
+    let attempts = 0;
+    const maxAttempts = 30; // Maximum attempts before giving up (e.g., 30 seconds)
+
+    const interval = setInterval(() => {
+        fetch('http://localhost:8010/nebula', { method: 'GET' })
+        .then(response => {
+            if (response.status === 200) { // Server is back online
+                clearInterval(interval); // Stop checking
+                console.log("Server is back online. Reloading page...");
+                location.reload(); // Reload the page
+            }
+        })
+        .catch(error => {
+            console.warn("Server still offline, retrying...", error);
+        });
+
+        attempts++;
+        if (attempts >= maxAttempts) {
+            clearInterval(interval); // Stop checking after max attempts
+            console.error("Server did not come back online within the expected time.");
+            alert("Update process took too long. Please refresh manually.");
+        }
+    }, 2000); // Check every 2 seconds
 }
 
 // Periodically check for updates every 5 minutes
