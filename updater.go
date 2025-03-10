@@ -45,7 +45,7 @@ var (
 	SALTOLocation         = "/home/sormazabal/src/SALTO2"
 )
 
-// Struct to store update status
+// struct to store update status
 type UpdateStatus struct {
 	UpdateAvailable int `json:"update_available"`
 	UpdateRequested int `json:"update_requested"`
@@ -65,22 +65,22 @@ type indexInfo struct {
 // Main program
 func main() {
 
-	// These are the first steps for performing the initial configuration
+	// these are the first steps for performing the initial configuration
 
-	// Set logger to stdout with info level
+	// set logger to stdout with info level
 	metadata.SetLogger(stdr.New(stdlog.New(os.Stdout, "Nebula_TUF_Client:", stdlog.LstdFlags)))
 
-	// The verbosity sets the level of detail of the logger
+	// the verbosity sets the level of detail of the logger
 	stdr.SetVerbosity(verbosity)
 	log := metadata.GetLogger()
 
-	// Initialize environment - temporary folders, etc.
+	// initialize environment - temporary folders, etc.
 	metadataDir, err := InitEnvironment()
 	if err != nil {
 		log.Error(err, "Failed to initialize environment")
 	}
 
-	// Initialize client with Trust-On-First-Use
+	// initialize client with Trust-On-First-Use
 	err = InitTrustOnFirstUse(metadataDir)
 	if err != nil {
 		log.Error(err, "Trust-On-First-Use failed")
@@ -92,30 +92,28 @@ func main() {
 	// Go routine 1 for setting the TUF updater
 	go func() {
 		defer wg.Done()
-		// The updater needs to be looking for new updates every x time
+
+		// the updater needs to be looking for new updates every x time
 		for {
-			// download the desired services
-			for _, service := range services {
 
-				targetIndexFile, foundDesiredTargetIndexLocally, err := DownloadTargetIndex(metadataDir, service)
+			// downloading general-service-index.json
+			_, foundDesiredTargetIndexLocally, err := DownloadTargetIndex(metadataDir, service)
 
-				fmt.Printf("Target index file is in : %s", targetIndexFile)
+			if err != nil {
+				log.Error(err, "Download index file failed")
+			}
 
+			// if there is a new one, this will mean that is initializing for the first time or that there is a new update
+			if foundDesiredTargetIndexLocally == 0 {
+				err := setUpdateStatus(1)
 				if err != nil {
-					log.Error(err, "Download index file failed")
-				}
-
-				if foundDesiredTargetIndexLocally == 0 {
-					err := setUpdateStatus(1)
-					if err != nil {
-						fmt.Println("❌ Error updating update_status.json:", err)
-					} else {
-						fmt.Println("✅ Successfully set update_status.json to update_available: 1")
-					}
-
+					fmt.Println("❌ Error updating update_status.json:", err)
 				} else {
-					fmt.Printf("\nThe local index file is the most updated one\n")
+					fmt.Println("✅ Successfully set update_status.json to update_available: 1")
 				}
+
+			} else {
+				fmt.Printf("\nThe local index file is the most updated one\n")
 			}
 
 			time.Sleep(time.Second * 60)
@@ -131,12 +129,14 @@ func main() {
 
 		for {
 
+			// every x time it will be reading if the user has requested a new update
 			updateRequested, err := ReadUpdateRequested(jsonFilePath)
 
 			if err != nil {
 				fmt.Printf("There has been an error while reading the Update Requested Value: %f. \n", err)
 			}
 
+			// if the user has pushed the botton, the new server should be executed.
 			if updateRequested == 1 {
 
 				// get working directory
@@ -152,34 +152,35 @@ func main() {
 
 				fmt.Printf("The index file is located in: %s \n", targetIndexFile)
 
-				// Read the actual JSON file content
+				// read the actual JSON file content
 				fileContent, err := os.ReadFile(targetIndexFile)
 				if err != nil {
 					fmt.Printf("Fail to read the index file \n")
 				}
 
-				// Parse JSON into the map
+				// parse JSON into the map
 				err = json.Unmarshal(fileContent, &data)
 				if err != nil {
 					fmt.Printf("\U0001F534Error parsing JSON: %v\U0001F534", err)
 				}
 
-				// Getting service path
+				// getting service path
 				servicePath := data[service].Path
 
-				// Download the artifact without specifying the file type
+				// download the artifact without specifying the file type
 				err = downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath)
 				if err != nil {
 					fmt.Printf("\U0001F534Failed to download binary: %v\U0001F534\n", err)
 					os.Exit(1)
 				}
 
-				// Make sure the new binary is executable
+				// make sure the new binary is executable
 				err = os.Chmod(newBinaryPath, 0755)
 				if err != nil {
 					fmt.Printf("Failed to set executable permissions \n")
 				}
 
+				// verifying that the downloaded file is integrate and authentic
 				err = verifyingDownloadedFile(targetIndexFile, newBinaryPath)
 
 				if err == nil {
@@ -192,26 +193,23 @@ func main() {
 
 				serviceVersion := data[service].Version
 
-				// Unziping and setting the update status to 0
+				// unziping and setting the update status to 0
 				unzipAndSetStatus(serviceVersion)
 
-				// Restarting the server
+				// restarting the server
 				err = restartServer(serviceVersion)
 				if err != nil {
 					fmt.Printf("Failed to restart the server: %f", err)
 				}
 			}
 			time.Sleep(time.Second * 5)
-
 		}
-
 	}()
 	//
 	wg.Wait()
-
 }
 
-// InitEnvironment prepares the local environment - temporary folders, etc.
+// InitEnvironment prepares the local environment for TUF- temporary folders, etc.
 func InitEnvironment() (string, error) {
 	var tmpDir string
 	// get working directory
@@ -280,7 +278,6 @@ func InitTrustOnFirstUse(metadataDir string) error {
 // DownloadTargetIndex downloads the target file using Updater. The Updater refreshes the top-level metadata,
 // get the target information, verifies if the target is already cached, and in case it
 // is not cached, downloads the target file.
-
 func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) {
 
 	serviceFilePath := filepath.Join(service, fmt.Sprintf("%s-index.json", service))
@@ -411,7 +408,7 @@ func ReadUpdateRequested(jsonFilePath string) (int, error) {
 	return status.UpdateRequested, nil
 }
 
-// Downloading the artifact.
+// Downloading the artifact indicated in general-service.json
 func downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath string) error {
 	// Authenticate using the service account key
 	ctx := context.Background()
@@ -630,7 +627,7 @@ func Unzip(src, dest string) error {
 	return nil
 }
 
-// restartServer executes "./general-service serve --config=config/general-service.yml".
+// RestartServer executes "./general-service serve --config=config/general-service.yml".
 func restartServer(serviceVersion string) error {
 	// Exec path
 	execPath := fmt.Sprintf("%s/%s/general-service", SALTOLocation, serviceVersion)
