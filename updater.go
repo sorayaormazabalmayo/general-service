@@ -36,7 +36,6 @@ const (
 
 var (
 	serviceAccountKeyPath = "/home/sormazabal/artifact-downloader-key.json"
-	services              = []string{"general-service"}
 	jsonFilePath          = "/home/sormazabal/src/SALTO2/update_status.json"
 	service               = "general-service"
 	targetIndexFile       = "/home/sormazabal/src/SALTO2/data/general-service/general-service-index.json"
@@ -65,6 +64,9 @@ type indexInfo struct {
 // Main program
 func main() {
 
+	previousVersion := ""
+	currentVersion := ""
+
 	// these are the first steps for performing the initial configuration
 
 	// set logger to stdout with info level
@@ -88,6 +90,12 @@ func main() {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+
+	currentVersion, err = readCurrentVersion()
+
+	if err != nil {
+		fmt.Printf("There has been an error wile reading the current version\n")
+	}
 
 	// Go routine 1 for setting the TUF updater
 	go func() {
@@ -122,7 +130,7 @@ func main() {
 	}()
 	//
 
-	// Go routine 2 that is always looking if the user has requested the update
+	// Go routine 2 that is alsways looking if the user has requested the update
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -201,6 +209,28 @@ func main() {
 				if err != nil {
 					fmt.Printf("Failed to restart the server: %f", err)
 				}
+
+				// If the server has been properly started
+
+				// Delete the previous version's folder
+
+				previousVersionPath := fmt.Sprintf("%s/%s", SALTOLocation, previousVersion)
+
+				err = os.RemoveAll(previousVersionPath)
+
+				if err != nil {
+					fmt.Printf("Error deleting the previous version's folder\n")
+				}
+
+				// The previus version is what has been stored in current version
+				previousVersion = currentVersion
+
+				currentVersion, err = readCurrentVersion()
+
+				if err != nil {
+					fmt.Printf("Error reading the current version")
+				}
+
 			}
 			time.Sleep(time.Second * 5)
 		}
@@ -273,6 +303,30 @@ func InitTrustOnFirstUse(metadataDir string) error {
 		return fmt.Errorf("failed to write root.json metadata: %w", err)
 	}
 	return nil
+}
+
+// Reading the version of the current running server. For that, the general_service_index.json
+// version will be downloaded.
+
+func readCurrentVersion() (string, error) {
+
+	var data map[string]indexInfo
+
+	// Read the actual JSON file content
+	fileContent, err := os.ReadFile(targetIndexFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to read index file: %w", err)
+	}
+
+	// Parse JSON into the map
+	err = json.Unmarshal(fileContent, &data)
+	if err != nil {
+		return "", fmt.Errorf("error parsin the JSON: %w", err)
+	}
+
+	currentVersion := data[service].Version
+
+	return currentVersion, nil
 }
 
 // DownloadTargetIndex downloads the target file using Updater. The Updater refreshes the top-level metadata,
