@@ -93,6 +93,8 @@ func main() {
 
 	currentVersion, err = readCurrentVersion()
 
+	fmt.Printf("🟣Current Version is %s🟣\n", currentVersion)
+
 	if err != nil {
 		fmt.Printf("There has been an error wile reading the current version\n")
 	}
@@ -214,6 +216,8 @@ func main() {
 
 				// Delete the previous version's folder
 
+				fmt.Printf("🟣The previous version is %s🟣\n", previousVersion)
+
 				previousVersionPath := fmt.Sprintf("%s/%s", SALTOLocation, previousVersion)
 
 				err = os.Remove(previousVersionPath)
@@ -225,7 +229,11 @@ func main() {
 				// The previus version is what has been stored in current version
 				previousVersion = currentVersion
 
+				fmt.Printf("🟣The previous version is %s🟣\n", previousVersion)
+
 				currentVersion, err = readCurrentVersion()
+
+				fmt.Printf("🟣Current Version is %s🟣\n", currentVersion)
 
 				if err != nil {
 					fmt.Printf("Error reading the current version")
