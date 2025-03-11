@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -64,9 +65,6 @@ type indexInfo struct {
 // Main program
 func main() {
 
-	previousVersion := ""
-	currentVersion := ""
-
 	// these are the first steps for performing the initial configuration
 
 	// set logger to stdout with info level
@@ -88,16 +86,26 @@ func main() {
 		log.Error(err, "Trust-On-First-Use failed")
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	currentVersion, err = readCurrentVersion()
-
-	fmt.Printf("🟣Current Version is %s🟣\n", currentVersion)
+	// getting the current version
+	currentVersion, err := readCurrentVersion()
 
 	if err != nil {
 		fmt.Printf("There has been an error wile reading the current version\n")
 	}
+
+	fmt.Printf("🟣Current Version is %s🟣\n", currentVersion)
+
+	// getting the previous version folder
+	previousVersion, err := getPreviousVersion(currentVersion)
+
+	if err != nil {
+		fmt.Printf("There has been an error wile getting the previous version\n")
+	}
+
+	fmt.Printf("🟣Previous Version is %s🟣\n", currentVersion)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
 
 	// Go routine 1 for setting the TUF updater
 	go func() {
@@ -336,6 +344,50 @@ func readCurrentVersion() (string, error) {
 	currentVersion := data[service].Version
 
 	return currentVersion, nil
+}
+
+// getPreviousVersion gets the previous running version of the service.
+// This will first read the folders that have version naming structure and the previous version will
+// be the one that is different from the currentVersion
+func getPreviousVersion(currentVersion string) (string, error) {
+	var previousVersion string
+
+	// Regular expression to match versioned folders
+	versionRegex := regexp.MustCompile(`^v\d{4}\.\d{2}\.\d{2}-sha\.[a-fA-F0-9]{8}$`)
+
+	// Read the directory
+	entries, err := os.ReadDir(SALTOLocation)
+	if err != nil {
+		return "", fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	var versions []string
+
+	// Filter versioned folders
+	for _, entry := range entries {
+		if entry.IsDir() && versionRegex.MatchString(entry.Name()) {
+			versions = append(versions, entry.Name())
+		}
+	}
+
+	// Ensure we have exactly two versions
+	if len(versions) != 2 {
+		return "", fmt.Errorf("expected 2 versioned folders, found %d", len(versions))
+	}
+
+	// Identify the previous version (the one different from currentVersion)
+	for _, version := range versions {
+		if version != currentVersion {
+			previousVersion = version
+			break
+		}
+	}
+
+	if previousVersion == "" {
+		return "", fmt.Errorf("previous version not found")
+	}
+
+	return previousVersion, nil
 }
 
 // DownloadTargetIndex downloads the target file using Updater. The Updater refreshes the top-level metadata,
