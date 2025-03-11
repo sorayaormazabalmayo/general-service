@@ -218,7 +218,7 @@ func main() {
 
 				fmt.Printf("🟣The previous version is %s🟣\n", previousVersion)
 
-				previousVersionPath := fmt.Sprintf("/%s/%s", SALTOLocation, previousVersion)
+				previousVersionPath := fmt.Sprintf("%s/%s", SALTOLocation, previousVersion)
 
 				err = os.Remove(previousVersionPath)
 
