@@ -68,7 +68,7 @@
 
 <!-- Main Content Area -->
 <div class="w3-main" style="margin-left:260px; padding:20px; text-align:center;">
-    <h1> Nebula Version 58</h1>
+    <h1> Nebula Version 59</h1>
 
     <!-- Image -->
     <img src="static/images/door-placeholder.png" alt="Nebula Access Control" style="max-width:100%; height:auto; margin-top:10px;">
@@ -118,7 +118,8 @@ function triggerUpdate() {
                 
 }
 
-// Function to repeatedly check if /nebula is accessible
+// Function to repeatedly check if /nebula is accessible. This will be able to relaod the page 
+// when there is an update in the index.html of the server. 
 function checkServerStatus() {
     let attempts = 0;
     const maxAttempts = 30; // Maximum attempts before giving up (e.g., 30 seconds)

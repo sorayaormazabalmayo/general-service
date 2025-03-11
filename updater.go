@@ -647,8 +647,5 @@ func restartServer(serviceVersion string) error {
 	fmt.Println("✅ New server instance started. Exiting old process...")
 	time.Sleep(1 * time.Second) // Allow new process to start before exiting
 
-	// Exit the old process
-	os.Exit(0)
-
 	return nil
 }
