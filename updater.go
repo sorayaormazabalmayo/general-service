@@ -218,12 +218,12 @@ func main() {
 
 				fmt.Printf("🟣The previous version is %s🟣\n", previousVersion)
 
-				previousVersionPath := fmt.Sprintf("%s/%s", SALTOLocation, previousVersion)
+				previousVersionPath := fmt.Sprintf("/%s/%s", SALTOLocation, previousVersion)
 
 				err = os.Remove(previousVersionPath)
 
 				if err != nil {
-					fmt.Printf("Error deleting the previous version's folder\n")
+					fmt.Printf("Error deleting the previous version's folder: %w \n", err)
 				}
 
 				// The previus version is what has been stored in current version
