@@ -216,7 +216,7 @@ func main() {
 
 				previousVersionPath := fmt.Sprintf("%s/%s", SALTOLocation, previousVersion)
 
-				err = os.RemoveAll(previousVersionPath)
+				err = os.Remove(previousVersionPath)
 
 				if err != nil {
 					fmt.Printf("Error deleting the previous version's folder\n")
