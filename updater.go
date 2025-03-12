@@ -45,7 +45,7 @@ var (
 	destinationPath       = "/home/sormazabal/src/SALTO2/general-service.zip"
 	SALTOLocation         = "/home/sormazabal/src/SALTO2"
 	linkNameService       = "/usr/local/bin/general-service"
-	linkNameConfig        = "/etc/general-service/config.yaml"
+	linkNameConfig        = "/etc/general-service/general-service.yml"
 )
 
 // struct to store update status
@@ -221,30 +221,24 @@ func main() {
 
 				// Remove the old symlink if it exist
 
-				_ = os.Remove(linkNameService)
-				_ = os.Remove(linkNameConfig)
+				targetFileService := filepath.Join(SALTOLocation, serviceVersion, service)
+				targetFileConfig := filepath.Join(SALTOLocation, serviceVersion, "config", "general-service.yml")
 
-				targetFile := filepath.Join(SALTOLocation, serviceVersion, service)
+				// 1) Updating symlink
 
-				// Create the new symlink for general-service.yml
-				if err := os.Symlink(targetFile, linkNameService); err != nil {
-					fmt.Println("Error creating symlink:", err)
+				// symlink for service
+				if err := updateSymlink(targetFileService, linkNameService); err != nil {
+					fmt.Println("Error updating symlink:", err)
 					return
 				}
+				fmt.Println("Symlink updated to point to:", targetFileService)
 
-				fmt.Println("Symlink updated to point to:", targetFile)
-
-				// Create a new symlink for config.yml
-
-				targetFile = filepath.Join(SALTOLocation, serviceVersion, "config", "general-service.yml")
-
-				// Create the new symlink for general-service.yml
-				if err := os.Symlink(targetFile, linkNameConfig); err != nil {
-					fmt.Println("Error creating symlink:", err)
+				// symlink for config
+				if err := updateSymlink(targetFileConfig, linkNameConfig); err != nil {
+					fmt.Println("Error updating symlink:", err)
 					return
 				}
-
-				fmt.Println("Symlink updated to point to:", targetFile)
+				fmt.Println("Symlink updated to point to:", targetFileConfig)
 
 				// 2) Reload and restart the service
 				ctx := context.Background()
@@ -829,5 +823,16 @@ func reloadAndRestartUnit(ctx context.Context, unitName string) error {
 	}
 
 	fmt.Printf("Restart job queued: %v\n", jobID)
+	return nil
+}
+
+// updateSymlink updates the symlink
+func updateSymlink(newTarget, linkName string) error {
+	if err := os.Remove(linkName); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove old symlink: %w", err)
+	}
+	if err := os.Symlink(newTarget, linkName); err != nil {
+		return fmt.Errorf("failed to create symlink: %w", err)
+	}
 	return nil
 }
