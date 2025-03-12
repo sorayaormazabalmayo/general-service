@@ -250,10 +250,6 @@ func main() {
 				fmt.Println("Service reloaded and restarted successfully!")
 
 				// restarting the server
-				err = restartServer(serviceVersion)
-				if err != nil {
-					fmt.Printf("Failed to restart the server: %f", err)
-				}
 
 				// If the server has been properly started
 
@@ -261,13 +257,13 @@ func main() {
 
 				fmt.Printf("🟣The previous version is %s🟣\n", previousVersion)
 
-				if previousVersion != "" {
-					previousVersionPath := filepath.Join(SALTOLocation, previousVersion)
-					err = os.RemoveAll(previousVersionPath)
-					if err != nil {
-						err = fmt.Errorf("error deleting the previous version's folder: %w", err)
-						fmt.Println(err) // Print the error or handle it appropriately
-					}
+				previousVersionPath := filepath.Join(SALTOLocation, previousVersion)
+				err = os.RemoveAll(previousVersionPath)
+
+				fmt.Printf("🟠Deleting previous version folder🟠\n")
+				if err != nil {
+					err = fmt.Errorf("error deleting the previous version's folder: %w", err)
+					fmt.Println(err) // Print the error or handle it appropriately
 				}
 
 				// The previus version is what has been stored in current version
