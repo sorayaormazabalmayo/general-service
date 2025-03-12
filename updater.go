@@ -68,6 +68,8 @@ type indexInfo struct {
 // Main program
 func main() {
 
+	fmt.Printf("🟠Updater 1🟠\n")
+
 	// these are the first steps for performing the initial configuration
 
 	// set logger to stdout with info level
