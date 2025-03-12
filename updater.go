@@ -22,6 +22,7 @@ import (
 	"github.com/go-logr/stdr"
 	"golang.org/x/oauth2/google"
 
+	"github.com/coreos/go-systemd/v22/dbus"
 	"github.com/theupdateframework/go-tuf/v2/metadata"
 	"github.com/theupdateframework/go-tuf/v2/metadata/config"
 	"github.com/theupdateframework/go-tuf/v2/metadata/updater"
@@ -43,6 +44,8 @@ var (
 	newBinaryPath         = "/home/sormazabal/src/SALTO2/tmp/general-service.zip"
 	destinationPath       = "/home/sormazabal/src/SALTO2/general-service.zip"
 	SALTOLocation         = "/home/sormazabal/src/SALTO2"
+	linkNameService       = "/usr/local/bin/general-service"
+	linkNameConfig        = "/etc/general-service/config.yaml"
 )
 
 // struct to store update status
@@ -99,10 +102,10 @@ func main() {
 	previousVersion, err := getPreviousVersion(currentVersion)
 
 	if err != nil {
-		fmt.Printf("There has been an error wile getting the previous version\n")
+		fmt.Println("Error:", err)
 	}
 
-	fmt.Printf("🟣Previous Version is %s🟣\n", currentVersion)
+	fmt.Printf("🟣Previous Version is %s🟣\n", previousVersion)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -213,6 +216,44 @@ func main() {
 
 				// unziping and setting the update status to 0
 				unzipAndSetStatus(serviceVersion)
+
+				// After unzipping, systemd should know which is the new version
+
+				// Remove the old symlink if it exist
+
+				_ = os.Remove(linkNameService)
+				_ = os.Remove(linkNameConfig)
+
+				targetFile := filepath.Join(SALTOLocation, serviceVersion, service)
+
+				// Create the new symlink for general-service.yml
+				if err := os.Symlink(targetFile, linkNameService); err != nil {
+					fmt.Println("Error creating symlink:", err)
+					return
+				}
+
+				fmt.Println("Symlink updated to point to:", targetFile)
+
+				// Create a new symlink for config.yml
+
+				targetFile = filepath.Join(SALTOLocation, serviceVersion, "config", "general-service.yml")
+
+				// Create the new symlink for general-service.yml
+				if err := os.Symlink(targetFile, linkNameConfig); err != nil {
+					fmt.Println("Error creating symlink:", err)
+					return
+				}
+
+				fmt.Println("Symlink updated to point to:", targetFile)
+
+				// 2) Reload and restart the service
+				ctx := context.Background()
+				if err := reloadAndRestartUnit(ctx, "general-service.service"); err != nil {
+					fmt.Println("Error restarting service:", err)
+					return
+				}
+
+				fmt.Println("Service reloaded and restarted successfully!")
 
 				// restarting the server
 				err = restartServer(serviceVersion)
@@ -353,7 +394,7 @@ func getPreviousVersion(currentVersion string) (string, error) {
 	var previousVersion string
 
 	// Regular expression to match versioned folders
-	versionRegex := regexp.MustCompile(`^v\d{4}\.\d{2}\.\d{2}-sha\.[a-fA-F0-9]{8}$`)
+	versionRegex := regexp.MustCompile(`^v\d{4}\.\d{2}\.\d{2}-sha\.[a-fA-F0-9]{7}$`)
 
 	// Read the directory
 	entries, err := os.ReadDir(SALTOLocation)
@@ -382,6 +423,8 @@ func getPreviousVersion(currentVersion string) (string, error) {
 			break
 		}
 	}
+
+	fmt.Printf("The previous version is: %s\n", previousVersion)
 
 	if previousVersion == "" {
 		return "", fmt.Errorf("previous version not found")
@@ -762,5 +805,29 @@ func restartServer(serviceVersion string) error {
 	fmt.Println("✅ New server instance started. Exiting old process...")
 	time.Sleep(1 * time.Second) // Allow new process to start before exiting
 
+	return nil
+}
+
+// It reloads and restarts the unit
+func reloadAndRestartUnit(ctx context.Context, unitName string) error {
+	// Connect to systemd via D-Bus using the context-aware method
+	conn, err := dbus.NewSystemConnectionContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to connect to system bus: %w", err)
+	}
+	defer conn.Close()
+
+	// Daemon-reload with context
+	if err := conn.ReloadContext(ctx); err != nil {
+		return fmt.Errorf("failed to reload systemd: %w", err)
+	}
+
+	// Restart the unit with context
+	jobID, err := conn.RestartUnitContext(ctx, unitName, "replace", nil)
+	if err != nil {
+		return fmt.Errorf("failed to restart unit %s: %w", unitName, err)
+	}
+
+	fmt.Printf("Restart job queued: %v\n", jobID)
 	return nil
 }
