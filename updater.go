@@ -67,7 +67,7 @@ type indexInfo struct {
 // Main program
 func main() {
 
-	fmt.Printf("🟠Updater 1🟠\n")
+	fmt.Printf("🟠Updater 2🟠\n")
 
 	// these are the first steps for performing the initial configuration
 
@@ -291,25 +291,29 @@ func main() {
 // InitEnvironment prepares the local environment for TUF- temporary folders, etc.
 func InitEnvironment() (string, error) {
 	var tmpDir string
-	// get working directory
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("failed to get current working directory: %w", err)
-	}
+
+	/*
+		// get working directory
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("failed to get current working directory: %w", err)
+		}
+	*/
+
 	if !generateRandomFolder {
-		tmpDir = filepath.Join(cwd, "tmp")
+		tmpDir = filepath.Join(SALTOLocation, "tmp")
 		// create a temporary folder for storing the demo artifacts
 		os.Mkdir(tmpDir, 0750)
 	} else {
 		// create a temporary folder for storing the demo artifacts
-		tmpDir, err = os.MkdirTemp(cwd, "tmp")
+		_, err := os.MkdirTemp(SALTOLocation, "tmp")
 		if err != nil {
 			return "", fmt.Errorf("failed to create a temporary folder: %w", err)
 		}
 	}
 
 	// create a destination folder for storing the downloaded target
-	os.Mkdir(filepath.Join(cwd, "data"), 0750)
+	os.Mkdir(filepath.Join(SALTOLocation, "data"), 0750)
 	return tmpDir, nil
 }
 
@@ -447,14 +451,16 @@ func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) 
 	}
 
 	// get working directory
-	cwd, err := os.Getwd()
+	/*
+		cwd, err := os.Getwd()
 
-	if err != nil {
-		fmt.Printf("Error getting the current directory \n")
-	}
+		if err != nil {
+			fmt.Printf("Error getting the current directory \n")
+		}
+	*/
 
 	cfg.LocalMetadataDir = localMetadataDir
-	cfg.LocalTargetsDir = filepath.Join(cwd, "data")
+	cfg.LocalTargetsDir = filepath.Join(SALTOLocation, "data")
 	cfg.RemoteTargetsURL = targetsURL
 	cfg.PrefixTargetsWithHash = true
 
@@ -482,9 +488,9 @@ func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) 
 		return nil, 0, fmt.Errorf("getting info for target index \"%s\": %w", serviceFilePath, err)
 	}
 
-	os.Mkdir(filepath.Join(cwd, "data", service), 0750)
+	os.Mkdir(filepath.Join(SALTOLocation, "data", service), 0750)
 
-	targetFilePath := filepath.Join(cwd, "data", service, fmt.Sprintf("%s-index.json", service))
+	targetFilePath := filepath.Join(SALTOLocation, "data", service, fmt.Sprintf("%s-index.json", service))
 	os.MkdirAll(filepath.Dir(targetFilePath), 0750) // Ensure the directory exists
 
 	path, tb, err := up.FindCachedTarget(ti, targetFilePath)
