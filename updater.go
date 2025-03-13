@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -774,29 +773,6 @@ func Unzip(src, dest string) error {
 			return err
 		}
 	}
-	return nil
-}
-
-// RestartServer executes "./general-service serve --config=config/general-service.yml".
-func restartServer(serviceVersion string) error {
-	// Exec path
-	execPath := fmt.Sprintf("%s/%s/general-service", SALTOLocation, serviceVersion)
-	// Define the command and its arguments
-	cmd := exec.Command(execPath, "serve", "--config=config/general-service.yml")
-
-	// Attach the output to the console
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	// Start the new process
-	err := cmd.Start()
-	if err != nil {
-		return fmt.Errorf("failed to start server: %w", err)
-	}
-
-	fmt.Println("✅ New server instance started. Exiting old process...")
-	time.Sleep(1 * time.Second) // Allow new process to start before exiting
-
 	return nil
 }
 
