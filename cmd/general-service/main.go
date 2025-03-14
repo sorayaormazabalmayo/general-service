@@ -20,7 +20,7 @@ func main() {
 	// Create command
 	generalServiceCmd := cli.NewGeneralServiceCommand(logger)
 
-	// control aspects of parsing behaviour
+	// Control aspects of parsing behaviour
 	opts := []ff.Option{
 		ff.WithConfigFileFlag("config"),
 		ff.WithConfigFileParser(ffyaml.Parse),

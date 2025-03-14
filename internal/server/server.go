@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/saltosystems-internal/x/log"
@@ -74,7 +73,7 @@ func runUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	setUpdateRequestedStatus(1)
 
 	// handleShutdown waits for a termination signal and shuts down the server
-	syscall.Kill(syscall.Getpid(), syscall.SIGINT)
+	// syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	// Restart the application (or notify an external service manager)
 }
 
