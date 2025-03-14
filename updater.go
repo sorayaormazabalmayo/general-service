@@ -66,10 +66,7 @@ type indexInfo struct {
 
 // Main program
 func main() {
-
-	fmt.Printf("🟠Updater 2🟠\n")
-
-	// these are the first steps for performing the initial configuration
+	// These are the first steps for performing the initial configuration
 
 	// set logger to stdout with info level
 	metadata.SetLogger(stdr.New(stdlog.New(os.Stdout, "Nebula_TUF_Client:", stdlog.LstdFlags)))
@@ -292,14 +289,6 @@ func main() {
 func InitEnvironment() (string, error) {
 	var tmpDir string
 
-	/*
-		// get working directory
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", fmt.Errorf("failed to get current working directory: %w", err)
-		}
-	*/
-
 	if !generateRandomFolder {
 		tmpDir = filepath.Join(SALTOLocation, "tmp")
 		// create a temporary folder for storing the demo artifacts
@@ -434,10 +423,7 @@ func getPreviousVersion(currentVersion string) (string, error) {
 func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) {
 
 	serviceFilePath := filepath.Join(service, fmt.Sprintf("%s-index.json", service))
-
-	fmt.Printf("DEBUG: Constructed serviceFilePath: %s\n", serviceFilePath)
 	decodedServiceFilePath, _ := url.QueryUnescape(serviceFilePath)
-	fmt.Printf("DEBUG: Decoded serviceFilePath: %s\n", decodedServiceFilePath)
 
 	rootBytes, err := os.ReadFile(filepath.Join(localMetadataDir, "root.json"))
 	if err != nil {
@@ -449,15 +435,6 @@ func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) 
 	if err != nil {
 		return nil, 0, err
 	}
-
-	// get working directory
-	/*
-		cwd, err := os.Getwd()
-
-		if err != nil {
-			fmt.Printf("Error getting the current directory \n")
-		}
-	*/
 
 	cfg.LocalMetadataDir = localMetadataDir
 	cfg.LocalTargetsDir = filepath.Join(SALTOLocation, "data")
@@ -476,11 +453,8 @@ func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) 
 		return nil, 0, fmt.Errorf("failed to refresh trusted metadata: %w", err)
 	}
 
-	fmt.Printf("DEBUG: serviceFilePath before GetTargetInfo: %s\n", serviceFilePath)
-
 	// Decode serviceFilePath before calling GetTargetInfo
 	decodedServiceFilePath, _ = url.QueryUnescape(serviceFilePath)
-	fmt.Printf("DEBUG: Decoded serviceFilePath: %s\n", decodedServiceFilePath)
 
 	// Get metadata info
 	ti, err := up.GetTargetInfo(decodedServiceFilePath)
@@ -495,8 +469,6 @@ func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) 
 
 	path, tb, err := up.FindCachedTarget(ti, targetFilePath)
 
-	fmt.Printf("DEBUG: Cached target file path: %s\n", path)
-
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to find if there is a cachet target: %w", err)
 	}
@@ -507,12 +479,8 @@ func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) 
 		return tb, 1, nil
 	}
 
-	// Print the path before downloading
-	fmt.Printf("DEBUG: targetFilePath before DownloadTarget: %s\n", targetFilePath)
-
 	// Ensure it is unescaped
 	decodedTargetFilePath, _ := url.QueryUnescape(targetFilePath)
-	fmt.Printf("DEBUG: Decoded targetFilePath: %s\n", decodedTargetFilePath)
 
 	// Now download
 	targetfilePath, tb, err := up.DownloadTarget(ti, decodedTargetFilePath, "")
@@ -702,6 +670,7 @@ func unzipAndSetStatus(serviceVersion string) {
 	destinationPathUnzip := ""
 	destinationPathUnzip = fmt.Sprintf("%s/%s", SALTOLocation, serviceVersion)
 
+	// Unzipping the downloaded target
 	if err := Unzip(destinationPath, destinationPathUnzip); err != nil {
 		fmt.Printf("❌ Error unzipping new binary: %v\n", err)
 	} else {
@@ -709,11 +678,9 @@ func unzipAndSetStatus(serviceVersion string) {
 	}
 
 	// Removing what has been unzipped
-
 	os.Remove(destinationPath)
 
 	// Setting update status to 0
-
 	setUpdateStatus(0)
 
 }
