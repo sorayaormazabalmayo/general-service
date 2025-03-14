@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	stdlog "log"
+	"log"
 	"mime"
 	"net/http"
 	"net/url"
@@ -66,44 +66,65 @@ type indexInfo struct {
 
 // Main program
 func main() {
-	// These are the first steps for performing the initial configuration
 
-	// set logger to stdout with info level
-	metadata.SetLogger(stdr.New(stdlog.New(os.Stdout, "Nebula_TUF_Client:", stdlog.LstdFlags)))
+	// First, a lof file will be opened in append mode, create if does not exist
 
-	// the verbosity sets the level of detail of the logger
+	// Setting Logger's file location
+	logFileLocation := filepath.Join(SALTOLocation, "nebula_tuf_client.log")
+
+	logFile, err := os.OpenFile(logFileLocation, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
+	}
+	defer logFile.Close() // Ensure file is closed when program exits
+
+	// Create a MultiWriter to log to both stdout and file
+	multiWriter := io.MultiWriter(os.Stdout, logFile)
+
+	// Create logger 1 for TUF that writes to both destinations
+	stdLogger1 := log.New(multiWriter, "Nebula TUF Client Logger:", log.LstdFlags)
+
+	// Set logger to use both stdout and file
+	metadata.SetLogger(stdr.New(stdLogger1))
+
+	// Set verbosity level
 	stdr.SetVerbosity(verbosity)
-	log := metadata.GetLogger()
+
+	// Retrieve and use logger
+	tufLog := metadata.GetLogger()
+
+	// Creating logger 2 for getting information of other staff not related as much to TUF
+	generalLog := log.New(multiWriter, "Updater General Logger: ", log.LstdFlags)
 
 	// initialize environment - temporary folders, etc.
 	metadataDir, err := InitEnvironment()
 	if err != nil {
-		log.Error(err, "Failed to initialize environment")
+		tufLog.Error(err, "Failed to initialize environment")
 	}
 
 	// initialize client with Trust-On-First-Use
 	err = InitTrustOnFirstUse(metadataDir)
 	if err != nil {
-		log.Error(err, "Trust-On-First-Use failed")
+		tufLog.Error(err, "Trust-On-First-Use failed")
 	}
 
 	// getting the current version
 	currentVersion, err := readCurrentVersion()
 
 	if err != nil {
-		fmt.Printf("There has been an error wile reading the current version\n")
+		generalLog.Printf("❌There has been an error wile reading the current version❌\n")
 	}
 
-	fmt.Printf("🟣Current Version is %s🟣\n", currentVersion)
+	generalLog.Printf("🟣Current Version is %s🟣\n", currentVersion)
 
 	// getting the previous version folder
-	previousVersion, err := getPreviousVersion(currentVersion)
+	previousVersion, err := getPreviousVersion(currentVersion, generalLog)
 
 	if err != nil {
-		fmt.Println("Error:", err)
+		generalLog.Printf("Error:", err)
 	}
 
-	fmt.Printf("🟣Previous Version is %s🟣\n", previousVersion)
+	generalLog.Printf("🟣Previous Version is %s🟣\n", previousVersion)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -119,20 +140,20 @@ func main() {
 			_, foundDesiredTargetIndexLocally, err := DownloadTargetIndex(metadataDir, service)
 
 			if err != nil {
-				log.Error(err, "Download index file failed")
+				tufLog.Error(err, "Download index file failed")
 			}
 
 			// if there is a new one, this will mean that is initializing for the first time or that there is a new update
 			if foundDesiredTargetIndexLocally == 0 {
 				err := setUpdateStatus(1)
 				if err != nil {
-					fmt.Println("❌ Error updating update_status.json:", err)
+					generalLog.Printf("❌ Error updating update_status.json:", err)
 				} else {
-					fmt.Println("✅ Successfully set update_status.json to update_available: 1")
+					generalLog.Printf("✅ Successfully set update_status.json to update_available: 1")
 				}
 
 			} else {
-				fmt.Printf("\nThe local index file is the most updated one\n")
+				generalLog.Printf("The local index file is the most updated one\n")
 			}
 
 			time.Sleep(time.Second * 60)
@@ -152,7 +173,7 @@ func main() {
 			updateRequested, err := ReadUpdateRequested(jsonFilePath)
 
 			if err != nil {
-				fmt.Printf("There has been an error while reading the Update Requested Value: %f. \n", err)
+				generalLog.Printf("There has been an error while reading the Update Requested Value: %f. \n", err)
 			}
 
 			// if the user has pushed the botton, the new server should be executed.
@@ -161,7 +182,7 @@ func main() {
 				// get working directory
 				cwd, err := os.Getwd()
 				if err != nil {
-					fmt.Printf("Failed to get the working directory \n")
+					generalLog.Printf("Failed to get the working directory \n")
 				}
 				tmpDir := filepath.Join(cwd, "tmp")
 				// create a temporary folder for storing the demo artifacts
@@ -169,55 +190,51 @@ func main() {
 
 				var data map[string]indexInfo
 
-				fmt.Printf("The index file is located in: %s \n", targetIndexFile)
+				generalLog.Printf("The index file is located in: %s \n", targetIndexFile)
 
 				// read the actual JSON file content
 				fileContent, err := os.ReadFile(targetIndexFile)
 				if err != nil {
-					fmt.Printf("Fail to read the index file \n")
+					generalLog.Printf("Fail to read the index file \n")
 				}
 
 				// parse JSON into the map
 				err = json.Unmarshal(fileContent, &data)
 				if err != nil {
-					fmt.Printf("\U0001F534Error parsing JSON: %v\U0001F534", err)
+					generalLog.Printf("\U0001F534Error parsing JSON: %v\U0001F534", err)
 				}
 
 				// getting service path
 				servicePath := data[service].Path
 
 				// download the artifact without specifying the file type
-				err = downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath)
+				err = downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath, generalLog)
 				if err != nil {
-					fmt.Printf("\U0001F534Failed to download binary: %v\U0001F534\n", err)
+					generalLog.Printf("\U0001F534Failed to download binary: %v\U0001F534\n", err)
 					os.Exit(1)
 				}
 
 				// make sure the new binary is executable
 				err = os.Chmod(newBinaryPath, 0755)
 				if err != nil {
-					fmt.Printf("Failed to set executable permissions \n")
+					generalLog.Printf("Failed to set executable permissions \n")
 				}
 
 				// verifying that the downloaded file is integrate and authentic
-				err = verifyingDownloadedFile(targetIndexFile, newBinaryPath)
+				err = verifyingDownloadedFile(targetIndexFile, newBinaryPath, generalLog)
 
 				if err == nil {
 					// Replace old binary
 					err = os.Rename(newBinaryPath, destinationPath)
 					if err != nil {
-						fmt.Printf("Failed to rename the binary \n")
+						generalLog.Printf("Failed to rename the binary \n")
 					}
 				}
 
 				serviceVersion := data[service].Version
 
 				// unziping and setting the update status to 0
-				unzipAndSetStatus(serviceVersion)
-
-				// After unzipping, systemd should know which is the new version
-
-				// Remove the old symlink if it exist
+				unzipAndSetStatus(serviceVersion, generalLog)
 
 				targetFileService := filepath.Join(SALTOLocation, serviceVersion, service)
 				targetFileConfig := filepath.Join(SALTOLocation, serviceVersion, "config", "general-service.yml")
@@ -226,55 +243,51 @@ func main() {
 
 				// symlink for service
 				if err := updateSymlink(targetFileService, linkNameService); err != nil {
-					fmt.Println("Error updating symlink:", err)
+					generalLog.Printf("Error updating symlink:", err)
 					return
 				}
-				fmt.Println("Symlink updated to point to:", targetFileService)
+				generalLog.Printf("Symlink updated to point to:", targetFileService)
 
 				// symlink for config
 				if err := updateSymlink(targetFileConfig, linkNameConfig); err != nil {
-					fmt.Println("Error updating symlink:", err)
+					generalLog.Printf("Error updating symlink:", err)
 					return
 				}
-				fmt.Println("Symlink updated to point to:", targetFileConfig)
+				generalLog.Printf("Symlink updated to point to:", targetFileConfig)
 
 				// 2) Reload and restart the service
 				ctx := context.Background()
 				if err := reloadAndRestartUnit(ctx, "general-service.service"); err != nil {
-					fmt.Println("Error restarting service:", err)
+					generalLog.Printf("Error restarting service:", err)
 					return
 				}
 
-				fmt.Println("Service reloaded and restarted successfully!")
-
-				// restarting the server
-
-				// If the server has been properly started
+				generalLog.Printf("Service reloaded and restarted successfully!")
 
 				// Delete the previous version's folder
 
-				fmt.Printf("🟣The previous version is %s🟣\n", previousVersion)
+				generalLog.Printf("🟣The previous version is %s🟣\n", previousVersion)
 
 				previousVersionPath := filepath.Join(SALTOLocation, previousVersion)
 				err = os.RemoveAll(previousVersionPath)
 
-				fmt.Printf("🟠Deleting previous version folder🟠\n")
+				generalLog.Printf("🟠Deleting previous version folder🟠\n")
 				if err != nil {
 					err = fmt.Errorf("error deleting the previous version's folder: %w", err)
-					fmt.Println(err) // Print the error or handle it appropriately
+					generalLog.Printf("Error: %w \n", err) // Print the error or handle it appropriately
 				}
 
 				// The previus version is what has been stored in current version
 				previousVersion = currentVersion
 
-				fmt.Printf("🟣The previous version is %s🟣\n", previousVersion)
+				generalLog.Printf("🟣The previous version is %s🟣\n", previousVersion)
 
 				currentVersion, err = readCurrentVersion()
 
-				fmt.Printf("🟣Current Version is %s🟣\n", currentVersion)
+				generalLog.Printf("🟣Current Version is %s🟣\n", currentVersion)
 
 				if err != nil {
-					fmt.Printf("Error reading the current version")
+					generalLog.Printf("Error reading the current version")
 				}
 
 			}
@@ -374,7 +387,7 @@ func readCurrentVersion() (string, error) {
 // getPreviousVersion gets the previous running version of the service.
 // This will first read the folders that have version naming structure and the previous version will
 // be the one that is different from the currentVersion
-func getPreviousVersion(currentVersion string) (string, error) {
+func getPreviousVersion(currentVersion string, generalLog *log.Logger) (string, error) {
 	var previousVersion string
 
 	// Regular expression to match versioned folders
@@ -408,7 +421,7 @@ func getPreviousVersion(currentVersion string) (string, error) {
 		}
 	}
 
-	fmt.Printf("The previous version is: %s\n", previousVersion)
+	generalLog.Printf("The previous version is: %s\n", previousVersion)
 
 	if previousVersion == "" {
 		return "", fmt.Errorf("previous version not found")
@@ -423,7 +436,6 @@ func getPreviousVersion(currentVersion string) (string, error) {
 func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) {
 
 	serviceFilePath := filepath.Join(service, fmt.Sprintf("%s-index.json", service))
-	decodedServiceFilePath, _ := url.QueryUnescape(serviceFilePath)
 
 	rootBytes, err := os.ReadFile(filepath.Join(localMetadataDir, "root.json"))
 	if err != nil {
@@ -454,7 +466,7 @@ func DownloadTargetIndex(localMetadataDir, service string) ([]byte, int, error) 
 	}
 
 	// Decode serviceFilePath before calling GetTargetInfo
-	decodedServiceFilePath, _ = url.QueryUnescape(serviceFilePath)
+	decodedServiceFilePath, _ := url.QueryUnescape(serviceFilePath)
 
 	// Get metadata info
 	ti, err := up.GetTargetInfo(decodedServiceFilePath)
@@ -509,7 +521,6 @@ func setUpdateStatus(value int) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -532,10 +543,10 @@ func ReadUpdateRequested(jsonFilePath string) (int, error) {
 }
 
 // Downloading the artifact indicated in general-service.json
-func downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath string) error {
+func downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath string, generalLog *log.Logger) error {
 	// Authenticate using the service account key
 	ctx := context.Background()
-	creds, err := google.CredentialsFromJSON(ctx, readFile(serviceAccountKeyPath), "https://www.googleapis.com/auth/cloud-platform")
+	creds, err := google.CredentialsFromJSON(ctx, readFile(serviceAccountKeyPath, generalLog), "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
 		return fmt.Errorf("failed to load service account credentials: %w", err)
 	}
@@ -576,7 +587,7 @@ func downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath string) 
 			}
 		}
 	}
-	fmt.Printf("Saving file as: %s\n", fileName)
+	generalLog.Printf("Saving file as: %s\n", fileName)
 
 	// Write the response to a file
 	out, err := os.Create(fileName)
@@ -590,17 +601,17 @@ func downloadArtifact(serviceAccountKeyPath, servicePath, newBinaryPath string) 
 }
 
 // readFile reads the content of the service account key JSON file.
-func readFile(path string) []byte {
+func readFile(path string, generalLog *log.Logger) []byte {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		fmt.Printf("\U0001F534Error reading file %s: %v\U0001F534\n", path, err)
+		generalLog.Printf("\U0001F534Error reading file %s: %v\U0001F534\n", path, err)
 		os.Exit(1)
 	}
 	return content
 }
 
-// Verifying a file.
-func verifyingDownloadedFile(targetIndexFile, DonwloadedFilePath string) error {
+// verifyingDownloadedFile verifies a file.
+func verifyingDownloadedFile(targetIndexFile, DonwloadedFilePath string, generalLog *log.Logger) error {
 
 	var data map[string]indexInfo
 
@@ -613,28 +624,28 @@ func verifyingDownloadedFile(targetIndexFile, DonwloadedFilePath string) error {
 	// Parse JSON into the map
 	err = json.Unmarshal(fileContent, &data)
 	if err != nil {
-		fmt.Printf("\U0001F534Error parsing JSON: %v\U0001F534", err)
+		generalLog.Printf("\U0001F534Error parsing JSON: %v\U0001F534", err)
 		return err
 	}
 
 	indexHash := data[service].Hashes.Sha256
 
-	fmt.Printf("\nThe hash from the nebula-service-index.json is %s", indexHash)
+	generalLog.Printf("\nThe hash from the nebula-service-index.json is %s", indexHash)
 
 	// Computing the hash of the downloaded file
 
 	// Compute the SHA256 hash
 	downloadedFilehash, err := ComputeSHA256(DonwloadedFilePath)
 
-	fmt.Printf("Downloaded file hash is: %s\n", downloadedFilehash)
+	generalLog.Printf("Downloaded file hash is: %s\n", downloadedFilehash)
 
 	if err != nil {
-		fmt.Printf("\U0001F534Error computing hash: %v\U0001F534\n", err)
+		generalLog.Printf("\U0001F534Error computing hash: %v\U0001F534\n", err)
 		return fmt.Errorf("error while computing the hash")
 	}
 
 	if indexHash == downloadedFilehash {
-		fmt.Printf("\U0001F7E2The target file has been downloaded successfully!\U0001F7E2\n")
+		generalLog.Printf("\U0001F7E2The target file has been downloaded successfully!\U0001F7E2\n")
 	} else {
 		return fmt.Errorf("there has been an error while downloading the file, the hashes do not match")
 	}
@@ -665,16 +676,16 @@ func ComputeSHA256(filePath string) (string, error) {
 }
 
 // Unzipping the downloaded target and setting the update status to 0.
-func unzipAndSetStatus(serviceVersion string) {
+func unzipAndSetStatus(serviceVersion string, generalLog *log.Logger) {
 
 	destinationPathUnzip := ""
 	destinationPathUnzip = fmt.Sprintf("%s/%s", SALTOLocation, serviceVersion)
 
 	// Unzipping the downloaded target
 	if err := Unzip(destinationPath, destinationPathUnzip); err != nil {
-		fmt.Printf("❌ Error unzipping new binary: %v\n", err)
+		generalLog.Printf("❌ Error unzipping new binary: %v", err)
 	} else {
-		fmt.Println("✅ Successfully unzipped the new binary.")
+		generalLog.Printf("✅ Successfully unzipped the new binary.")
 	}
 
 	// Removing what has been unzipped
