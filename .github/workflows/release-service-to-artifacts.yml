@@ -106,11 +106,6 @@ jobs:
           ## Getting the repository name
           repo_name=$(basename "${{ github.repository }}")
           echo "repo_name=$repo_name" >> $GITHUB_ENV
-      
-      # Step 3 : Building the .go program to create the binary
-      - name: Building the .go program 
-        run: |
-          GOOS=linux GOARCH=amd64 go build -o general-service cmd/general-service/main.go 
 
       # Step 3: Getting the .zip that wants to be relased 
       # zip -r general-service.zip general-service config/ static/ 
