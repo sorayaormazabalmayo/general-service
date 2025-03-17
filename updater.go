@@ -121,7 +121,7 @@ func main() {
 	previousVersion, err := getPreviousVersion(currentVersion)
 
 	if err != nil {
-		generalLog.Printf("Error:", err)
+		generalLog.Printf("❌There has been an error wile reading the previous version❌\n")
 	}
 
 	generalLog.Printf("🟣Previous Version is %s🟣\n", previousVersion)
