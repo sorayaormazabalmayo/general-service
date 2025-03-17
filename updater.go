@@ -31,7 +31,7 @@ import (
 const (
 	metadataURL          = "https://sorayaormazabalmayo.github.io/TUF_Repository_YubiKey_Vault/metadata"
 	targetsURL           = "https://sorayaormazabalmayo.github.io/TUF_Repository_YubiKey_Vault/targets"
-	verbosity            = 0
+	verbosity            = -1
 	generateRandomFolder = false
 )
 
@@ -118,7 +118,7 @@ func main() {
 	generalLog.Printf("🟣Current Version is %s🟣\n", currentVersion)
 
 	// getting the previous version folder
-	previousVersion, err := getPreviousVersion(currentVersion, generalLog)
+	previousVersion, err := getPreviousVersion(currentVersion)
 
 	if err != nil {
 		generalLog.Printf("Error:", err)
@@ -178,15 +178,6 @@ func main() {
 
 			// if the user has pushed the botton, the new server should be executed.
 			if updateRequested == 1 {
-
-				// get working directory
-				cwd, err := os.Getwd()
-				if err != nil {
-					generalLog.Printf("Failed to get the working directory \n")
-				}
-				tmpDir := filepath.Join(cwd, "tmp")
-				// create a temporary folder for storing the demo artifacts
-				os.Mkdir(tmpDir, 0750)
 
 				var data map[string]indexInfo
 
@@ -387,7 +378,7 @@ func readCurrentVersion() (string, error) {
 // getPreviousVersion gets the previous running version of the service.
 // This will first read the folders that have version naming structure and the previous version will
 // be the one that is different from the currentVersion
-func getPreviousVersion(currentVersion string, generalLog *log.Logger) (string, error) {
+func getPreviousVersion(currentVersion string) (string, error) {
 	var previousVersion string
 
 	// Regular expression to match versioned folders
@@ -420,8 +411,6 @@ func getPreviousVersion(currentVersion string, generalLog *log.Logger) (string, 
 			break
 		}
 	}
-
-	generalLog.Printf("The previous version is: %s\n", previousVersion)
 
 	if previousVersion == "" {
 		return "", fmt.Errorf("previous version not found")
@@ -630,7 +619,7 @@ func verifyingDownloadedFile(targetIndexFile, DonwloadedFilePath string, general
 
 	indexHash := data[service].Hashes.Sha256
 
-	generalLog.Printf("\nThe hash from the nebula-service-index.json is %s", indexHash)
+	generalLog.Printf("The hash from the nebula-service-index.json is %s", indexHash)
 
 	// Computing the hash of the downloaded file
 
