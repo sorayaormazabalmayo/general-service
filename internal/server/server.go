@@ -33,7 +33,7 @@ type UpdateStatus struct {
 }
 
 var (
-	jsonFilePath = "/home/sormazabal/src/SALTO2"
+	jsonFilePath = "/home/sormazabal/src/SALTO2/update_status.json"
 	updateStatus UpdateStatus
 	updateMutex  sync.Mutex
 )
