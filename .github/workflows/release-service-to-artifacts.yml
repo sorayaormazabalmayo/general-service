@@ -111,7 +111,7 @@ jobs:
       # zip -r general-service.zip general-service config/ static/ 
       - name: Getting the -zip 
         run: |
-         zip -r general-service.zip general-service.exe config/
+         zip -r general-service.zip general-service config/
               
       # Step 4: Compute the SHA256
       - name: Compute the SHA256 of the .zip

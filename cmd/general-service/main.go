@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+
 	// Create new logger
 	logger := sdlog.New()
 
