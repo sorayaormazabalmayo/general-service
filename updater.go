@@ -31,7 +31,7 @@ import (
 const (
 	metadataURL          = "https://sorayaormazabalmayo.github.io/TUF_Repository_YubiKey_Vault/metadata"
 	targetsURL           = "https://sorayaormazabalmayo.github.io/TUF_Repository_YubiKey_Vault/targets"
-	verbosity            = -1
+	verbosity            = 4
 	generateRandomFolder = false
 )
 
