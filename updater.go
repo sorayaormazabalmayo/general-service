@@ -144,7 +144,7 @@ func main() {
 			}
 
 			// if there is a new one, this will mean that is initializing for the first time or that there is a new update
-			if foundDesiredTargetIndexLocally == 0 {
+			if foundDesiredTargetIndexLocally == 0 && err == nil {
 				err := setUpdateStatus(1)
 				if err != nil {
 					generalLog.Printf("❌ Error updating update_status.json:", err)
